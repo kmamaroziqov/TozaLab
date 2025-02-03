@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,6 +28,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+AUTH_USER_MODEL = 'customer.User'
 
 # Application definition
 
@@ -40,6 +42,17 @@ INSTALLED_APPS = [
     'rest_framework',
     'customer.apps.CustomerConfig',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT auth
+    ],
+}
+
+from datetime import datetime, timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),  # Token expires in 1 day
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
