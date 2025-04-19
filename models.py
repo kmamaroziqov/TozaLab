@@ -34,13 +34,14 @@ class Service(db.Model):
     transactions = db.relationship('Transaction', backref='service', lazy=True)
     reviews = db.relationship('Review', backref='service', lazy=True)
     disputes = db.relationship('Dispute', backref='service', lazy=True)
-
+    bookings = db.relationship('Booking', backref='service', lazy=True)
 
 class Transaction(db.Model):
     __tablename__ = 'transactions'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     service_id = db.Column(db.Integer, db.ForeignKey('services.id'), nullable=False)
+    booking_id = db.Column(db.Integer, db.ForeignKey('bookings.id'), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
     currency = db.Column(db.String(3), nullable=False)
     status = db.Column(db.String(20), nullable=False)
@@ -48,6 +49,19 @@ class Transaction(db.Model):
 
     def __repr__(self):
         return f"<Transaction {self.id} - User {self.user_id} - Service {self.service_id}>"
+
+# Booking Model
+class Booking(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    service_id = db.Column(db.Integer, db.ForeignKey('service.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    time = db.Column(db.Time, nullable=False)
+    recurrence = db.Column(db.String(20))  # e.g., 'weekly'
+    status = db.Column(db.String(20), default='confirmed')  # e.g., 'confirmed', 'paid'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Relationships
+    transactions = db.relationship('Transaction', backref='booking', lazy=True)
 
 
 class Review(db.Model):
@@ -72,6 +86,8 @@ class User(db.Model):
     transactions = db.relationship('Transaction', backref='user', lazy=True)
     reviews = db.relationship('Review', backref='user', lazy=True)
     disputes = db.relationship('Dispute', backref='user', lazy=True)
+    bookings = db.relationship('Booking', backref='user', lazy=True)
+    notifications = db.relationship('Notification', backref='user', lazy=True)
 
 class Dispute(db.Model):
     __tablename__ = 'disputes'

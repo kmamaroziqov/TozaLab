@@ -52,7 +52,8 @@ class Booking(db.Model):
     recurrence = db.Column(db.String(20))  # e.g., 'weekly'
     status = db.Column(db.String(20), default='confirmed')  # e.g., 'confirmed', 'paid'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+    # Relationships
+    transactions = db.relationship('Transaction', backref='booking', lazy=True)
 # Review Model
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
