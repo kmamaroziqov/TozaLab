@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 @routes.route('/')
 def home():
-    return "Welcome to the API! Available endpoints: /register, /login, /admin/dashboard"
+    return render_template('home.html')
 #--------------------- Register endpoint
 @routes.route('/register', methods=['POST'])
 def register():
@@ -44,6 +44,21 @@ def register():
     db.session.add(new_Admin)
     db.session.commit()
     return jsonify({"message": "Admin registered successfully"}), 201
+
+# Service Search Route
+@routes.route('/search', methods=['GET'])
+def search():
+    query = request.args.get('query', '')
+    services = Service.query.filter(Service.name.contains(query)).all()
+    return render_template('search.html', services=services)
+
+
+# Service Detail Route
+@routes.route('/service/<int:service_id>', methods=['GET'])
+def service_detail(service_id):
+    service = Service.query.get_or_404(service_id)
+    reviews = Review.query.filter_by(service_id=service_id).all()
+    return render_template('service_detail.html', service=service, reviews=reviews)
 
 # Add this to app.py
 @routes.route('/admin/Admins/create', methods=['GET', 'POST'])
