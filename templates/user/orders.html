@@ -1,0 +1,23 @@
+<!-- app/templates/orders.html -->
+{% extends "base.html" %}
+
+{% block title %}Order History - Customer App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+        <h3>Your Bookings</h3>
+        <div class="list-group">
+            {% for booking in bookings %}
+                <div class="list-group-item">
+                    <h5>{{ booking.service.name }}</h5>
+                    <p><strong>Date:</strong> {{ booking.date }}</p>
+                    <p><strong>Status:</strong> {{ booking.status }}</p>
+                </div>
+            {% else %}
+                <p>No bookings found.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

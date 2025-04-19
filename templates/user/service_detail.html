@@ -1,0 +1,35 @@
+<!-- app/templates/service_detail.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ service.name }} - Customer App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+        <div class="card">
+            <img src="{{ service.image_url or 'https://via.placeholder.com/400x300' }}" class="card-img-top" alt="{{ service.name }}">
+            <div class="card-body">
+                <h3 class="card-title">{{ service.name }}</h3>
+                <p class="card-text">{{ service.description }}</p>
+                <p class="card-text"><strong>Price:</strong> ${{ service.price }}</p>
+                <p class="card-text"><strong>Location:</strong> {{ service.location }}</p>
+                <a href="{{ url_for('booking', service_id=service.id) }}" class="btn btn-success">Book Now</a>
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <h4 class="mt-4">Reviews</h4>
+        <div class="list-group">
+            {% for review in reviews %}
+                <div class="list-group-item">
+                    <h5>{{ review.rating }}/5</h5>
+                    <p>{{ review.comment }}</p>
+                    <small>By {{ review.user.email }}</small>
+                </div>
+            {% else %}
+                <p>No reviews yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

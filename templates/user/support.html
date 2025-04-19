@@ -1,0 +1,37 @@
+<!-- app/templates/support.html -->
+{% extends "base.html" %}
+
+{% block title %}Customer Support - Customer App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+        <h3>FAQs</h3>
+        <div class="accordion" id="faqAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                        How do I book a service?
+                    </button>
+                </h2>
+                <div id="faq1" class="accordion-collapse collapse show">
+                    <div class="accordion-body">
+                        Visit the service detail page and click "Book Now."
+                    </div>
+                </div>
+            </div>
+            <!-- Add more FAQ items here -->
+        </div>
+
+        <h3 class="mt-4">Contact Us</h3>
+        <form method="POST" action="{{ url_for('contact') }}">
+            <div class="mb-3">
+                <label for="message" class="form-label">Message</label>
+                <textarea class="form-control" id="message" name="message" rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Send</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+    
