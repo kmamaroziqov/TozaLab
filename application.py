@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 sentry_sdk.init(
-    dsn="https://8c6516dc2b417ecaebd32ef6b8777c35@o4508822984720384.ingest.de.sentry.io/4508822993895504",
+    dsn=os.getenv("SENTRY_DSN"),
     # Add data like request headers and IP for users,
     # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
     send_default_pii=True,
