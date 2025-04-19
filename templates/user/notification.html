@@ -1,0 +1,23 @@
+<!-- app/templates/notifications.html -->
+{% extends "base.html" %}
+
+{% block title %}Notifications - Customer App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+        <h3>Notifications</h3>
+        <div class="list-group">
+            {% for notification in notifications %}
+                <div class="list-group-item">
+                    <h5>{{ notification.title }}</h5>
+                    <p>{{ notification.message }}</p>
+                    <small>{{ notification.timestamp }}</small>
+                </div>
+            {% else %}
+                <p>No notifications found.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

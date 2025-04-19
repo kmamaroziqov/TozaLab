@@ -1,0 +1,22 @@
+<!-- app/templates/search.html -->
+{% extends "base.html" %}
+
+{% block title %}Service Search - Customer App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+        <!-- Search Form -->
+        <form method="GET" action="{{ url_for('search') }}" class="mb-4">
+            <div class="input-group">
+                <input type="text" class="form-control" name="query" placeholder="Search for services..." value="{{ request.args.get('query', '') }}">
+                <button class="btn btn-primary" type="submit">Search</button>
+            </div>
+        </form>
+
+        <!-- Service Listings -->
+        <h3>Search Results</h3>
+        {% if services %}
+            <div class="row">
+                {% for service in services %}
+                    <div class="col-md-6 mb-4">

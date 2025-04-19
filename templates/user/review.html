@@ -1,0 +1,35 @@
+<!-- app/templates/reviews.html -->
+{% extends "base.html" %}
+
+{% block title %}Leave a Review - Customer App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-center">Review {{ service.name }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('leave_review', service_id=service.id) }}">
+                    <div class="mb-3">
+                        <label for="rating" class="form-label">Rating</label>
+                        <select class="form-select" id="rating" name="rating" required>
+                            <option value="1">1 - Poor</option>
+                            <option value="2">2 - Fair</option>
+                            <option value="3">3 - Good</option>
+                            <option value="4">4 - Very Good</option>
+                            <option value="5">5 - Excellent</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Comment</label>
+                        <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Submit Review</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
