@@ -1,0 +1,41 @@
+<!-- templates/admin_reviews.html (Enhanced) -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Reviews</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        button { padding: 6px 10px; }
+        .nav-btn { padding: 8px 12px; margin-bottom: 15px; display: inline-block; background-color: #4CAF50; color: white; border-radius: 4px; text-decoration: none; }
+        .nav-btn:hover { background-color: #45A049; }
+    </style>
+</head>
+<body>
+    <h1>Manage Reviews</h1>
+    <a href="{{ url_for('admin_dashboard') }}" class="nav-btn">⬅️ Back to Dashboard</a>
+    <table border="1" cellspacing="0" cellpadding="5">
+        <tr><th>ID</th><th>User</th><th>Service</th><th>Content</th><th>Status</th><th>Actions</th></tr>
+        {% for review in reviews %}
+            <tr>
+                <td>{{ review.id }}</td>
+                <td>{{ review.user.username }}</td>
+                <td>{{ review.service.name }}</td>
+                <td>{{ review.content }}</td>
+                <td>{{ review.status }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('approve_review', review_id=review.id) }}" style="display:inline;">
+                        <button type="submit" onclick="return confirm('Approve this review?')">✅ Approve</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('reject_review', review_id=review.id) }}" style="display:inline;">
+                        <button type="submit" onclick="return confirm('Reject this review?')">❌ Reject</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('delete_review', review_id=review.id) }}" style="display:inline;">
+                        <input type="hidden" name="_method" value="DELETE">
+                        <button type="submit" onclick="return confirm('Delete this review?')">🗑️ Delete</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

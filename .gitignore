@@ -2,3 +2,8 @@ venv
 .env
 migrations/
 __pycache__/
+firebase_config/
+redis/
+alembic/
+alembic.ini
+app.log

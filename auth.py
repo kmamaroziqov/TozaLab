@@ -1,7 +1,7 @@
 # auth.py
 import jwt
 import bcrypt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import request, jsonify
 import os 
@@ -27,7 +27,7 @@ def create_jwt_token(user_id, role):
     payload = {
         'user_id': user_id,
         'role': role,
-        'exp': datetime.utcnow() + timedelta(hours=24)  # Token expires in 24 hours
+        'exp': datetime.now(timezone.utc) + timedelta(hours=24)  # Token expires in 24 hours
     }
     return jwt.encode(payload, key, algorithm='HS256')
 
@@ -43,34 +43,28 @@ def decode_jwt_token(token):
 # Decorator to protect routes based on role
 
 
+# auth.py
 def role_required(allowed_roles):
     """
-    Decorator to restrict access to specific roles.
-    :param allowed_roles: List of roles that are allowed to access the route.
+    Decorator to restrict access based on roles, supporting both cookies and headers.
     """
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            # Get the token from the Authorization header
-            token = request.headers.get('Authorization')
+            # ✅ Get token from cookies or Authorization header
+            token = request.cookies.get('admin_token') or request.headers.get('Authorization')
             if not token:
                 return jsonify({"message": "Missing token"}), 401
 
             try:
-                # Decode the JWT token
                 payload = decode_jwt_token(token)
-
-                # Check if the user's role is in the allowed roles
                 user_role = payload.get('role')
                 if user_role not in allowed_roles:
                     return jsonify({"message": "Unauthorized access"}), 403
 
             except Exception as e:
-                # Handle token decoding errors
-                return jsonify({"message": str(e)}), 401
+                return jsonify({"message": f"Invalid token: {str(e)}"}), 401
 
-            # If everything is fine, call the original function
             return f(*args, **kwargs)
-
         return decorated_function
     return decorator

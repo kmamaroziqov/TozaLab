@@ -1,0 +1,21 @@
+<!-- templates/admin_services.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Services</title>
+</head>
+<body>
+    <h1>Manage Services</h1>
+    <table border="1">
+        <tr><th>ID</th><th>Name</th><th>Price</th><th>Category</th></tr>
+        {% for service in services %}
+            <tr>
+                <td>{{ service.id }}</td>
+                <td>{{ service.name }}</td>
+                <td>{{ service.price }}</td>
+                <td>{{ service.category.name }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
