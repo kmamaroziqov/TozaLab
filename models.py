@@ -27,6 +27,9 @@ class Service(db.Model):
     price = db.Column(db.Float, nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     description = db.Column(db.Text, nullable=True)
+    location = db.Column(db.String(100), nullable=False)
+    image_url = db.Column(db.String(200)) #image url optional
+    # Relationships
     category = db.relationship('Category', back_populates='services')
     transactions = db.relationship('Transaction', backref='service', lazy=True)
     reviews = db.relationship('Review', backref='service', lazy=True)
@@ -53,7 +56,9 @@ class Review(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     service_id = db.Column(db.Integer, db.ForeignKey('services.id'), nullable=False)
     content = db.Column(db.String, nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
     status = db.Column(db.Enum('pending', 'approved', 'rejected', name='review_status'), default='pending')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -62,6 +67,8 @@ class User(db.Model):
     password_hash = db.Column(db.LargeBinary(128), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     phone_number = db.Column(db.String(20), unique=True, nullable=False)
+    addresses = db.relationship('Address', backref='user', lazy=True)
+    payment_methods = db.relationship('PaymentMethod', backref='user', lazy=True)
     transactions = db.relationship('Transaction', backref='user', lazy=True)
     reviews = db.relationship('Review', backref='user', lazy=True)
     disputes = db.relationship('Dispute', backref='user', lazy=True)
@@ -73,3 +80,34 @@ class Dispute(db.Model):
     service_id = db.Column(db.Integer, db.ForeignKey('services.id'), nullable=False)
     description = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(20), default="Open")
+
+class Address(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    street = db.Column(db.String(100), nullable=False)
+    city = db.Column(db.String(50), nullable=False)
+    state = db.Column(db.String(50), nullable=False)
+    zip_code = db.Column(db.String(10), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+# PaymentMethod Model
+class PaymentMethod(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    card_number = db.Column(db.String(16), nullable=False)
+    expiration_date = db.Column(db.String(7), nullable=False)  # Format: MM/YYYY
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+# SupportTicket Model
+class SupportTicket(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # Optional (for guest users)
+    message = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
