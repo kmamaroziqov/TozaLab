@@ -1,0 +1,47 @@
+<!-- app/templates/home.html -->
+{% extends "base.html" %}
+
+{% block title %}Home - Customer App{% endblock %}
+
+{% block content %}
+<div class="jumbotron jumbotron-fluid bg-primary text-white text-center py-5">
+    <div class="container">
+        <h1 class="display-4">Welcome to Customer App</h1>
+        <p class="lead">Find and book services effortlessly!</p>
+        <a href="{{ url_for('login') }}" class="btn btn-light btn-lg">Get Started</a>
+    </div>
+</div>
+
+<!-- Testimonials -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-4">What Our Customers Say</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <p class="card-text">"Amazing service! Highly recommend it."</p>
+                        <p class="card-text"><strong>- John Doe</strong></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <p class="card-text">"Easy to use and very professional."</p>
+                        <p class="card-text"><strong>- Jane Smith</strong></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <p class="card-text">"Saved me so much time!"</p>
+                        <p class="card-text"><strong>- Emily Johnson</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
