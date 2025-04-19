@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for, session, flash, jsonify, make_response
-from app import db
+from application import db
 from models import Admin, Service, Category, Transaction, Review
 from config import stripe
 from auth import hash_password, verify_password, create_jwt_token, role_required
@@ -507,7 +507,7 @@ def broadcast_notification():
     return redirect(url_for('admin_dashboard'))
 
 # API Error Logging Middleware
-@app.errorhandler(Exception)
+@routes.errorhandler(Exception)
 def handle_api_error(error):
     logger.error(f"API error: {error}")
     response = jsonify({"message": "An internal error occurred."})
@@ -517,4 +517,4 @@ def handle_api_error(error):
 logger.info("Logging configuration complete.")
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    routes.run(debug=True)

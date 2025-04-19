@@ -1,4 +1,4 @@
-from application import app, db
+from application import app
 from routes import routes
 
 app.register_blueprint(routes)
