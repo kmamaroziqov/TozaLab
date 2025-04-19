@@ -108,7 +108,7 @@ def login():
             logger.warning(f"Failed login attempt for Adminname: {Adminname}")
             return jsonify({"message": "Invalid credentials"}), 401
 
-        token = create_jwt_token(Admin.id, Admin.role)
+        token = create_jwt_token(Admin)
         logger.info(f"Admin {Adminname} logged in successfully")
         return jsonify({"token": token}), 200
 
@@ -457,7 +457,7 @@ def admin_login():
         return redirect(url_for('admin_login_page'))
     
     logger.info(f"Successful admin login for Adminname: {Adminname}")
-    token = create_jwt_token(Admin.id, Admin.role)
+    token = create_jwt_token(Admin)
     response = make_response(redirect(url_for('admin_dashboard')))
     response.set_cookie('admin_token', token, httponly=True, secure=True, samesite='Strict')
     session['Admin_role'] = Admin.role
