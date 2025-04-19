@@ -8,6 +8,8 @@ from application import app
 from firebase_setup import broadcast_to_topic
 import logging
 
+print("HI")
+
 logging.basicConfig(
     level=logging.INFO,  # Log only INFO-level messages and above
     format='%(asctime)s - %(levelname)s - %(message)s',
