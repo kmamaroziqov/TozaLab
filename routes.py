@@ -1,33 +1,29 @@
 from flask import render_template, request, redirect, url_for, session, flash, jsonify, make_response
-from extensions import db, admin
+from app import db
 from models import Admin, Service, Category, Transaction, Review
 from config import stripe
-from flask_migrate import Migrate
 from auth import hash_password, verify_password, create_jwt_token, role_required
-from application import app
 from firebase_setup import broadcast_to_topic
+from flask import Blueprint
 import logging
 
+routes = Blueprint("routes", __name__)
+
 logging.basicConfig(
-    level=logging.INFO,  # Log only INFO-level messages and above
+    level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("app.log"),  # Write logs to a file
-        logging.StreamHandler()         # Also print logs to the console
+        logging.FileHandler("app.log"),
+        logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
-migrate = Migrate(app, db)
-
-
-# Home route
-@app.route('/')
+@routes.route('/')
 def home():
     return "Welcome to the API! Available endpoints: /register, /login, /admin/dashboard"
-
 #--------------------- Register endpoint
-@app.route('/register', methods=['POST'])
+@routes.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
     Adminname = data.get('Adminname')
@@ -50,7 +46,7 @@ def register():
     return jsonify({"message": "Admin registered successfully"}), 201
 
 # Add this to app.py
-@app.route('/admin/Admins/create', methods=['GET', 'POST'])
+@routes.route('/admin/Admins/create', methods=['GET', 'POST'])
 @role_required(['Admin', 'Super Admin'])
 def create_Admin():
     if request.method == 'POST':
@@ -70,7 +66,7 @@ def create_Admin():
 
     return render_template('create_Admin.html')  # Create a new template
 
-@app.route('/Admins/<int:Admin_id>/edit', methods=['GET', 'POST'])
+@routes.route('/Admins/<int:Admin_id>/edit', methods=['GET', 'POST'])
 @role_required(['Admin', 'Super Admin'])
 def edit_Admin(Admin_id):
     Admin = Admin.query.get(Admin_id)
@@ -92,7 +88,7 @@ def edit_Admin(Admin_id):
 
 #--------------------- Login endpoint
 # Enhanced Login Route with Error Logging
-@app.route('/login', methods=['POST'])
+@routes.route('/login', methods=['POST'])
 def login():
     try:
         data = request.get_json()
@@ -117,7 +113,7 @@ def login():
         return jsonify({"message": "An error occurred during login"}), 500
 
 #--------------------- Admin endpoints
-@app.route('/Admins', methods=['GET'])
+@routes.route('/Admins', methods=['GET'])
 @role_required(['Super Admin'])  # Only Super Admins can access this route
 def get_Admins():
     Admins = db.session.query(Admin).all()
@@ -133,7 +129,7 @@ def get_Admins():
 
 
 # Get a single Admin by ID (Admin only)
-@app.route('/Admins/<int:Admin_id>', methods=['GET'])
+@routes.route('/Admins/<int:Admin_id>', methods=['GET'])
 @role_required(['Super Admin'])  # Only Super Admins can access this route
 def get_Admin(Admin_id):
     Admin = db.session.query(Admin).get(Admin_id)
@@ -146,7 +142,7 @@ def get_Admin(Admin_id):
     }), 200
 
 # Update a Admin (Admin only)
-@app.route('/Admins/<int:Admin_id>', methods=['PUT'])
+@routes.route('/Admins/<int:Admin_id>', methods=['PUT'])
 @role_required(['Super Admin'])  # Only Super Admins can access this route
 def update_Admin(Admin_id):
     data = request.get_json()
@@ -160,7 +156,7 @@ def update_Admin(Admin_id):
     return jsonify({"message": "Admin updated successfully"}), 200
 
 # Delete a Admin (Admin only)
-@app.route('/Admins/<int:Admin_id>', methods=['POST'])
+@routes.route('/Admins/<int:Admin_id>', methods=['POST'])
 @role_required(['Super Admin', 'Admin'])
 def delete_Admin(Admin_id):
     if request.form.get('_method') == 'DELETE':
@@ -174,7 +170,7 @@ def delete_Admin(Admin_id):
     return jsonify({"message": "Invalid request"}), 400
 
 # Search Admins (Admin only)
-@app.route('/Admins/search', methods=['GET'])
+@routes.route('/Admins/search', methods=['GET'])
 @role_required(['Super Admin'])  # Only Super Admins can access this route
 def search_Admins():
     query = request.args.get('q', '').strip()
@@ -193,7 +189,7 @@ def search_Admins():
     return jsonify(Admin_list), 200
 
 #--------------------- Service endpoints
-@app.route('/services', methods=['POST'])
+@routes.route('/services', methods=['POST'])
 def create_service():
     data = request.get_json()
     name = data.get('name')
@@ -210,7 +206,7 @@ def create_service():
     return jsonify({"message": "Service created successfully", "service_id": new_service.id}), 201
 
 # List all services
-@app.route('/services', methods=['GET'])
+@routes.route('/services', methods=['GET'])
 def list_services():
     services = db.session.query(Service).all()
     service_list = [
@@ -226,7 +222,7 @@ def list_services():
     return jsonify(service_list), 200
 
 # Get a single service by ID
-@app.route('/services/<int:service_id>', methods=['GET'])
+@routes.route('/services/<int:service_id>', methods=['GET'])
 def get_service(service_id):
     service = db.session.query(Service).filter_by(id=service_id).first()
     if not service:
@@ -240,7 +236,7 @@ def get_service(service_id):
     }), 200
 
 # Update a service
-@app.route('/services/<int:service_id>', methods=['PUT'])
+@routes.route('/services/<int:service_id>', methods=['PUT'])
 def update_service(service_id):
     data = request.get_json()
     service = db.session.query(Service).filter_by(id=service_id).first()
@@ -255,7 +251,7 @@ def update_service(service_id):
     return jsonify({"message": "Service updated successfully"}), 200
 
 # Delete a service
-@app.route('/services/<int:service_id>', methods=['DELETE'])
+@routes.route('/services/<int:service_id>', methods=['DELETE'])
 def delete_service(service_id):
     service = db.session.query(Service).filter_by(id=service_id).first()
     if not service:
@@ -265,7 +261,7 @@ def delete_service(service_id):
     return jsonify({"message": "Service deleted successfully"}), 200
 
 #--------------------- Category endpoints
-@app.route('/categories', methods=['POST'])
+@routes.route('/categories', methods=['POST'])
 @role_required(['Admin', 'Super Admin'])  # Only Admins can access this route
 def create_category():
     data = request.get_json()
@@ -279,14 +275,14 @@ def create_category():
     return jsonify({"message": "Category created successfully", "category_id": new_category.id}), 201
 
 # List all categories
-@app.route('/categories', methods=['GET'])
+@routes.route('/categories', methods=['GET'])
 def list_categories():
     categories = db.session.query(Category).all()
     category_list = [{"id": category.id, "name": category.name} for category in categories]
     return jsonify(category_list), 200
 
 # Delete a category (Admin only)
-@app.route('/categories/<int:category_id>', methods=['DELETE'])
+@routes.route('/categories/<int:category_id>', methods=['DELETE'])
 @role_required(['Admin', 'Super Admin'])  # Only Admins can access this route
 def delete_category(category_id):
     category = db.session.query(Category).get(category_id)
@@ -297,7 +293,7 @@ def delete_category(category_id):
     return jsonify({"message": "Category deleted successfully"}), 200
 
 #--------------------- Payment endpoint
-@app.route('/payment', methods=['POST'])
+@routes.route('/payment', methods=['POST'])
 def process_payment():
     try:
         # Get payment details from the request body
@@ -341,11 +337,11 @@ def process_payment():
         return jsonify({'error': str(e)}), 400
     except Exception as e:
         # Log the full error for debugging
-        app.logger.error(f"An error occurred: {str(e)}")
+        routes.logger.error(f"An error occurred: {str(e)}")
         return jsonify({'error': 'An error occurred while processing the payment'}), 500
 
 #--------------------- Review endpoints
-@app.route('/reviews', methods=['GET'])
+@routes.route('/reviews', methods=['GET'])
 @role_required(['Admin', 'Super Admin'])  # Only admins can access this route
 def get_reviews():
     reviews = db.session.query(Review).all()
@@ -362,7 +358,7 @@ def get_reviews():
     return jsonify(review_list), 200
 
 # Get a single review by ID (Admin only)
-@app.route('/reviews/<int:review_id>', methods=['GET'])
+@routes.route('/reviews/<int:review_id>', methods=['GET'])
 @role_required(['Admin', 'Super Admin'])  # Only admins can access this route
 def get_review(review_id):
     review = db.session.query(Review).get(review_id)
@@ -377,7 +373,7 @@ def get_review(review_id):
     }), 200
 
 # Create a new review
-@app.route('/reviews', methods=['POST'])
+@routes.route('/reviews', methods=['POST'])
 def create_review():
     data = request.get_json()
     Admin_id = data.get('Admin_id')
@@ -398,7 +394,7 @@ def create_review():
     return jsonify({"message": "Review created successfully", "review_id": new_review.id}), 201
 
 # Approve a review (Admin only)
-@app.route('/reviews/<int:review_id>/approve', methods=['POST'])
+@routes.route('/reviews/<int:review_id>/approve', methods=['POST'])
 @role_required(['Admin', 'Super Admin'])  # Only admins can access this route
 def approve_review(review_id):
     review = db.session.query(Review).get(review_id)
@@ -409,7 +405,7 @@ def approve_review(review_id):
     return jsonify({"message": "Review approved successfully"}), 200
 
 # Reject a review (Admin only)
-@app.route('/reviews/<int:review_id>/reject', methods=['POST'])
+@routes.route('/reviews/<int:review_id>/reject', methods=['POST'])
 @role_required(['Admin', 'Super Admin'])  # Only admins can access this route
 def reject_review(review_id):
     review = db.session.query(Review).get(review_id)
@@ -420,7 +416,7 @@ def reject_review(review_id):
     return jsonify({"message": "Review rejected successfully"}), 200
 
 # Delete a review (Admin only)
-@app.route('/reviews/<int:review_id>', methods=['DELETE'])
+@routes.route('/reviews/<int:review_id>', methods=['DELETE'])
 @role_required(['Admin', 'Super Admin'])  # Only admins can access this route
 def delete_review(review_id):
     review = db.session.query(Review).get(review_id)
@@ -432,19 +428,19 @@ def delete_review(review_id):
 
 #------------------ Admin endpoints
 
-@app.route('/admin/dashboard', methods=['GET'])
+@routes.route('/admin/dashboard', methods=['GET'])
 @role_required(['Admin', 'Super Admin'])  # Only Admins and Super Admins can access this route
 def admin_dashboard():
     return render_template('admin_dashboard.html', logout_url=url_for('admin_logout'))
 
 
 # Task 1: Show HTML Admin Login Page (GET request)
-@app.route('/admin/login', methods=['GET'])
+@routes.route('/admin/login', methods=['GET'])
 def admin_login_page():
     return render_template('admin_login.html')
 
 # Task 2: Handle Admin Login (POST request)
-@app.route('/admin/login', methods=['POST'])
+@routes.route('/admin/login', methods=['POST'])
 def admin_login():
     Adminname = request.form.get('Adminname')
     password = request.form.get('password')
@@ -468,7 +464,7 @@ def admin_login():
 
 # --------admin logout    
 # ✅ Admin Logout Route (Updated)
-@app.route('/admin/logout', methods=['GET', 'POST'])
+@routes.route('/admin/logout', methods=['GET', 'POST'])
 @role_required(['Admin', 'Super Admin'])
 def admin_logout():
     if request.method == 'POST' or request.method == 'GET':
@@ -481,19 +477,19 @@ def admin_logout():
     return jsonify({'message': 'Method Not Allowed'}), 405
 
 # ✅ Add Routes for Admin Panel Buttons
-@app.route('/admin/Admins', methods=['GET'])
+@routes.route('/admin/Admins', methods=['GET'])
 @role_required(['Admin', 'Super Admin'])
 def admin_manage_Admins():
     Admins = Admin.query.all()
     return render_template('admin_Admins.html', Admins=Admins)
 
-@app.route('/admin/services', methods=['GET'])
+@routes.route('/admin/services', methods=['GET'])
 @role_required(['Admin', 'Super Admin'])
 def admin_manage_services():
     services = Service.query.all()
     return render_template('admin_services.html', services=services)
 
-@app.route('/admin/reviews', methods=['GET'])
+@routes.route('/admin/reviews', methods=['GET'])
 @role_required(['Admin', 'Super Admin'])
 def admin_manage_reviews():
     reviews = Review.query.all()
@@ -501,7 +497,7 @@ def admin_manage_reviews():
 
 
 #----------Broadcast Notification
-@app.route('/admin/broadcast', methods=['POST'])
+@routes.route('/admin/broadcast', methods=['POST'])
 @role_required(['Admin', 'Super Admin'])
 def broadcast_notification():
     title = request.form.get('title')
