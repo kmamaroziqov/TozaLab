@@ -55,6 +55,16 @@ class Review(db.Model):
     content = db.Column(db.String, nullable=False)
     status = db.Column(db.Enum('pending', 'approved', 'rejected', name='review_status'), default='pending')
 
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password_hash = db.Column(db.LargeBinary(128), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    phone_number = db.Column(db.String(20), unique=True, nullable=False)
+    transactions = db.relationship('Transaction', backref='user', lazy=True)
+    reviews = db.relationship('Review', backref='user', lazy=True)
+    disputes = db.relationship('Dispute', backref='user', lazy=True)
 
 class Dispute(db.Model):
     __tablename__ = 'disputes'

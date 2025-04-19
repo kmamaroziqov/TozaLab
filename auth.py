@@ -23,13 +23,17 @@ def verify_password(plain_password, hashed_password):
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password)
 
 # Function to generate JWT token
-def create_jwt_token(user_id, role):
+def create_jwt_token(user):
+    user_type = user.__class__.__name__.lower()  # e.g., Admin → "admin"
+
     payload = {
-        'user_id': user_id,
-        'role': role,
-        'exp': datetime.now(timezone.utc) + timedelta(hours=24)  # Token expires in 24 hours
+        'user_id': user.id,
+        'type': user_type,
+        'exp': datetime.now(timezone.utc) + timedelta(hours=24)
     }
+
     return jwt.encode(payload, key, algorithm='HS256')
+
 
 # Function to decode JWT token
 def decode_jwt_token(token):

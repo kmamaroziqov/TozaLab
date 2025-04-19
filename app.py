@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, session, flash, jsonify, make_response
 from extensions import db, admin
-from models import User, Service, Category, Transaction, Review
+from models import Admin, Service, Category, Transaction, Review
 from config import stripe
 from flask_migrate import Migrate
 from auth import hash_password, verify_password, create_jwt_token, role_required
@@ -30,65 +30,65 @@ def home():
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
-    username = data.get('username')
+    Adminname = data.get('Adminname')
     password = data.get('password')
     role = data.get('role', 'Admin')  # Default role is "Admin"
 
-    if not username or not password:
-        return jsonify({"message": "Username and password are required"}), 400
+    if not Adminname or not password:
+        return jsonify({"message": "Adminname and password are required"}), 400
 
-    # Check if the user already exists
-    existing_user = db.session.query(User).filter_by(username=username).first()
-    if existing_user:
-        return jsonify({"message": "User already exists"}), 400
+    # Check if the Admin already exists
+    existing_Admin = db.session.query(Admin).filter_by(Adminname=Adminname).first()
+    if existing_Admin:
+        return jsonify({"message": "Admin already exists"}), 400
 
-    # Hash the password and create a new user
+    # Hash the password and create a new Admin
     password_hash = hash_password(password)
-    new_user = User(username=username, password_hash=password_hash, role=role)
-    db.session.add(new_user)
+    new_Admin = Admin(Adminname=Adminname, password_hash=password_hash, role=role)
+    db.session.add(new_Admin)
     db.session.commit()
-    return jsonify({"message": "User registered successfully"}), 201
+    return jsonify({"message": "Admin registered successfully"}), 201
 
 # Add this to app.py
-@app.route('/admin/users/create', methods=['GET', 'POST'])
+@app.route('/admin/Admins/create', methods=['GET', 'POST'])
 @role_required(['Admin', 'Super Admin'])
-def create_user():
+def create_Admin():
     if request.method == 'POST':
-        username = request.form.get('username')
+        Adminname = request.form.get('Adminname')
         password = request.form.get('password')
         role = request.form.get('role', 'Admin')
 
-        if User.query.filter_by(username=username).first():
-            flash('Username already exists.', 'danger')
-            return redirect(url_for('create_user'))
+        if Admin.query.filter_by(Adminname=Adminname).first():
+            flash('Adminname already exists.', 'danger')
+            return redirect(url_for('create_Admin'))
 
-        user = User(username=username, password_hash=hash_password(password), role=role)
-        db.session.add(user)
+        Admin = Admin(Adminname=Adminname, password_hash=hash_password(password), role=role)
+        db.session.add(Admin)
         db.session.commit()
-        flash('User created successfully!', 'success')
-        return redirect(url_for('admin_manage_users'))
+        flash('Admin created successfully!', 'success')
+        return redirect(url_for('admin_manage_Admins'))
 
-    return render_template('create_user.html')  # Create a new template
+    return render_template('create_Admin.html')  # Create a new template
 
-@app.route('/users/<int:user_id>/edit', methods=['GET', 'POST'])
+@app.route('/Admins/<int:Admin_id>/edit', methods=['GET', 'POST'])
 @role_required(['Admin', 'Super Admin'])
-def edit_user(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        flash('User not found.', 'danger')
-        return redirect(url_for('admin_manage_users'))
+def edit_Admin(Admin_id):
+    Admin = Admin.query.get(Admin_id)
+    if not Admin:
+        flash('Admin not found.', 'danger')
+        return redirect(url_for('admin_manage_Admins'))
 
     if request.method == 'POST':
-        username = request.form.get('username')
+        Adminname = request.form.get('Adminname')
         role = request.form.get('role')
         
-        user.username = username if username else user.username
-        user.role = role if role else user.role
+        Admin.Adminname = Adminname if Adminname else Admin.Adminname
+        Admin.role = role if role else Admin.role
         db.session.commit()
-        flash('User updated successfully!', 'success')
-        return redirect(url_for('admin_manage_users'))
+        flash('Admin updated successfully!', 'success')
+        return redirect(url_for('admin_manage_Admins'))
     
-    return render_template('edit_user.html', user=user)
+    return render_template('edit_Admin.html', Admin=Admin)
 
 #--------------------- Login endpoint
 # Enhanced Login Route with Error Logging
@@ -96,101 +96,101 @@ def edit_user(user_id):
 def login():
     try:
         data = request.get_json()
-        username = data.get('username')
+        Adminname = data.get('Adminname')
         password = data.get('password')
 
-        if not username or not password:
+        if not Adminname or not password:
             logger.warning("Login attempt with missing credentials")
-            return jsonify({"message": "Username and password are required"}), 400
+            return jsonify({"message": "Adminname and password are required"}), 400
 
-        user = User.query.filter_by(username=username).first()
-        if not user or not verify_password(password, user.password_hash):
-            logger.warning(f"Failed login attempt for username: {username}")
+        Admin = Admin.query.filter_by(Adminname=Adminname).first()
+        if not Admin or not verify_password(password, Admin.password_hash):
+            logger.warning(f"Failed login attempt for Adminname: {Adminname}")
             return jsonify({"message": "Invalid credentials"}), 401
 
-        token = create_jwt_token(user.id, user.role)
-        logger.info(f"User {username} logged in successfully")
+        token = create_jwt_token(Admin.id, Admin.role)
+        logger.info(f"Admin {Adminname} logged in successfully")
         return jsonify({"token": token}), 200
 
     except Exception as e:
         logger.error(f"Login error: {e}")
         return jsonify({"message": "An error occurred during login"}), 500
 
-#--------------------- User endpoints
-@app.route('/users', methods=['GET'])
+#--------------------- Admin endpoints
+@app.route('/Admins', methods=['GET'])
 @role_required(['Super Admin'])  # Only Super Admins can access this route
-def get_users():
-    users = db.session.query(User).all()
-    user_list = [
+def get_Admins():
+    Admins = db.session.query(Admin).all()
+    Admin_list = [
         {
-            "id": user.id,
-            "username": user.username,
-            "role": user.role,
+            "id": Admin.id,
+            "Adminname": Admin.Adminname,
+            "role": Admin.role,
         }
-        for user in users
+        for Admin in Admins
     ]
-    return jsonify(user_list), 200
+    return jsonify(Admin_list), 200
 
 
-# Get a single user by ID (Admin only)
-@app.route('/users/<int:user_id>', methods=['GET'])
+# Get a single Admin by ID (Admin only)
+@app.route('/Admins/<int:Admin_id>', methods=['GET'])
 @role_required(['Super Admin'])  # Only Super Admins can access this route
-def get_user(user_id):
-    user = db.session.query(User).get(user_id)
-    if not user:
-        return jsonify({"message": "User not found"}), 404
+def get_Admin(Admin_id):
+    Admin = db.session.query(Admin).get(Admin_id)
+    if not Admin:
+        return jsonify({"message": "Admin not found"}), 404
     return jsonify({
-        "id": user.id,
-        "username": user.username,
-        "role": user.role
+        "id": Admin.id,
+        "Adminname": Admin.Adminname,
+        "role": Admin.role
     }), 200
 
-# Update a user (Admin only)
-@app.route('/users/<int:user_id>', methods=['PUT'])
+# Update a Admin (Admin only)
+@app.route('/Admins/<int:Admin_id>', methods=['PUT'])
 @role_required(['Super Admin'])  # Only Super Admins can access this route
-def update_user(user_id):
+def update_Admin(Admin_id):
     data = request.get_json()
-    user = db.session.query(User).get(user_id)
-    if not user:
-        return jsonify({"message": "User not found"}), 404
+    Admin = db.session.query(Admin).get(Admin_id)
+    if not Admin:
+        return jsonify({"message": "Admin not found"}), 404
 
     # Update fields if provided
-    user.role = data.get('role', user.role)
+    Admin.role = data.get('role', Admin.role)
     db.session.commit()
-    return jsonify({"message": "User updated successfully"}), 200
+    return jsonify({"message": "Admin updated successfully"}), 200
 
-# Delete a user (Admin only)
-@app.route('/users/<int:user_id>', methods=['POST'])
+# Delete a Admin (Admin only)
+@app.route('/Admins/<int:Admin_id>', methods=['POST'])
 @role_required(['Super Admin', 'Admin'])
-def delete_user(user_id):
+def delete_Admin(Admin_id):
     if request.form.get('_method') == 'DELETE':
-        user = db.session.query(User).get(user_id)
-        if not user:
-            return jsonify({"message": "User not found"}), 404
-        db.session.delete(user)
+        Admin = db.session.query(Admin).get(Admin_id)
+        if not Admin:
+            return jsonify({"message": "Admin not found"}), 404
+        db.session.delete(Admin)
         db.session.commit()
-        flash('User deleted successfully', 'success')
-        return redirect(url_for('admin_manage_users'))
+        flash('Admin deleted successfully', 'success')
+        return redirect(url_for('admin_manage_Admins'))
     return jsonify({"message": "Invalid request"}), 400
 
-# Search users (Admin only)
-@app.route('/users/search', methods=['GET'])
+# Search Admins (Admin only)
+@app.route('/Admins/search', methods=['GET'])
 @role_required(['Super Admin'])  # Only Super Admins can access this route
-def search_users():
+def search_Admins():
     query = request.args.get('q', '').strip()
     if not query:
         return jsonify({"message": "Search query is required"}), 400
 
-    users = db.session.query(User).filter(User.username.ilike(f'%{query}%')).all()
-    user_list = [
+    Admins = db.session.query(Admin).filter(Admin.Adminname.ilike(f'%{query}%')).all()
+    Admin_list = [
         {
-            "id": user.id,
-            "username": user.username,
-            "role": user.role
+            "id": Admin.id,
+            "Adminname": Admin.Adminname,
+            "role": Admin.role
         }
-        for user in users
+        for Admin in Admins
     ]
-    return jsonify(user_list), 200
+    return jsonify(Admin_list), 200
 
 #--------------------- Service endpoints
 @app.route('/services', methods=['POST'])
@@ -305,10 +305,10 @@ def process_payment():
         amount = data.get('amount')
         currency = data.get('currency', 'usd')
         token = data.get('token')
-        user_id = data.get('user_id')
+        Admin_id = data.get('Admin_id')
         service_id = data.get('service_id')
 
-        if not amount or not token or not user_id or not service_id:
+        if not amount or not token or not Admin_id or not service_id:
             return jsonify({'error': 'Missing required fields'}), 400
 
         # Create a charge using Stripe's API
@@ -321,7 +321,7 @@ def process_payment():
 
         # Log the transaction in the database
         transaction = Transaction(
-            user_id=user_id,
+            Admin_id=Admin_id,
             service_id=service_id,
             amount=amount,
             currency=currency,
@@ -352,7 +352,7 @@ def get_reviews():
     review_list = [
         {
             "id": review.id,
-            "user_id": review.user_id,
+            "Admin_id": review.Admin_id,
             "service_id": review.service_id,
             "content": review.content,
             "status": review.status
@@ -370,7 +370,7 @@ def get_review(review_id):
         return jsonify({"message": "Review not found"}), 404
     return jsonify({
         "id": review.id,
-        "user_id": review.user_id,
+        "Admin_id": review.Admin_id,
         "service_id": review.service_id,
         "content": review.content,
         "status": review.status
@@ -380,15 +380,15 @@ def get_review(review_id):
 @app.route('/reviews', methods=['POST'])
 def create_review():
     data = request.get_json()
-    user_id = data.get('user_id')
+    Admin_id = data.get('Admin_id')
     service_id = data.get('service_id')
     content = data.get('content')
 
-    if not user_id or not service_id or not content:
-        return jsonify({"message": "User ID, Service ID, and Content are required"}), 400
+    if not Admin_id or not service_id or not content:
+        return jsonify({"message": "Admin ID, Service ID, and Content are required"}), 400
 
     new_review = Review(
-        user_id=user_id,
+        Admin_id=Admin_id,
         service_id=service_id,
         content=content,
         status='pending'  # Default status is "pending"
@@ -446,22 +446,22 @@ def admin_login_page():
 # Task 2: Handle Admin Login (POST request)
 @app.route('/admin/login', methods=['POST'])
 def admin_login():
-    username = request.form.get('username')
+    Adminname = request.form.get('Adminname')
     password = request.form.get('password')
 
-    user = User.query.filter(User.username == username, User.role.in_(['Admin', 'Super Admin'])).first()
+    Admin = Admin.query.filter(Admin.Adminname == Adminname, Admin.role.in_(['Admin', 'Super Admin'])).first()
     
-    if not user or not verify_password(password, user.password_hash):
-        logger.warning(f"Failed admin login attempt for username: {username}")
+    if not Admin or not verify_password(password, Admin.password_hash):
+        logger.warning(f"Failed admin login attempt for Adminname: {Adminname}")
         flash('Invalid credentials', 'danger')
         return redirect(url_for('admin_login_page'))
     
-    logger.info(f"Successful admin login for username: {username}")
-    token = create_jwt_token(user.id, user.role)
+    logger.info(f"Successful admin login for Adminname: {Adminname}")
+    token = create_jwt_token(Admin.id, Admin.role)
     response = make_response(redirect(url_for('admin_dashboard')))
     response.set_cookie('admin_token', token, httponly=True, secure=True, samesite='Strict')
-    session['user_role'] = user.role
-    session['user_id'] = user.id
+    session['Admin_role'] = Admin.role
+    session['Admin_id'] = Admin.id
     flash('Welcome to Admin Panel!', 'success')
     return response
 
@@ -481,11 +481,11 @@ def admin_logout():
     return jsonify({'message': 'Method Not Allowed'}), 405
 
 # ✅ Add Routes for Admin Panel Buttons
-@app.route('/admin/users', methods=['GET'])
+@app.route('/admin/Admins', methods=['GET'])
 @role_required(['Admin', 'Super Admin'])
-def admin_manage_users():
-    users = User.query.all()
-    return render_template('admin_users.html', users=users)
+def admin_manage_Admins():
+    Admins = Admin.query.all()
+    return render_template('admin_Admins.html', Admins=Admins)
 
 @app.route('/admin/services', methods=['GET'])
 @role_required(['Admin', 'Super Admin'])
@@ -507,7 +507,7 @@ def broadcast_notification():
     title = request.form.get('title')
     body = request.form.get('body')
     broadcast_to_topic(title, body)
-    flash('Announcement sent to all users!', 'success')
+    flash('Announcement sent to all Admins!', 'success')
     return redirect(url_for('admin_dashboard'))
 
 # API Error Logging Middleware
