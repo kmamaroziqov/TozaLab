@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign up</title>
+    
+    <!-- Static files now use url_for() -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" />
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css"/>
+    <script src="https://kit.fontawesome.com/cb792c0850.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="signup-login">
+        <div class="signup-box">
+            <!-- Form uses Flask's WTForms -->
+            <form method="post" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}  <!-- Replaces csrf_token -->
+                
+                <div class="heading">
+                    Sign up
+                </div>
+                <div class="line"></div>
+                
+                <!-- Form fields using WTForms -->
+                <div class="field">
+                    <b>{{ form.company.label }}</b>
+                    {{ form.company(class="inp", placeholder="Company name") }}
+                    {% for error in form.company.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                
+                <div class="field">
+                    <b>{{ form.phone.label }}</b>
+                    {{ form.phone(class="inp", placeholder="Phone number") }}
+                    {% for error in form.phone.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                
+                <div class="field">
+                    <b>{{ form.location.label }}</b>
+                    {{ form.location(class="inp", placeholder="Location") }}
+                    {% for error in form.location.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                
+                <div class="field">
+                    <b>{{ form.password.label }}</b>
+                    {{ form.password(class="inp", placeholder="Password") }}
+                    {% for error in form.password.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                
+                <div class="field">
+                    <b>{{ form.logo.label }}</b>
+                    {{ form.logo(class="inp", accept="image/*") }}
+                    {% for error in form.logo.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                
+                <div class="field">
+                    {{ form.submit(class="submit-button") }}
+                </div>
+                <div class="line"></div>
+            </form>
+            
+            <div class="field">
+                <!-- URL uses url_for() -->
+                <a class="anc" style="margin-left:130px;" href="{{ url_for('log_in') }}">Already have an account</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
