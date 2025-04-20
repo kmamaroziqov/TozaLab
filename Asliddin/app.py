@@ -18,7 +18,7 @@ login_manager.login_view = 'log_in'
 # Import models after db initialization to avoid circular imports
 from models import Provider, Company, Service, Bookings, Comments, TODOO  # Changed User to Provider
 
-@app.route('/')
+@app.route('/provider/signup/')
 def index():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
@@ -172,7 +172,7 @@ def add_service():
             description=form.desc.data,
             company_id=company.id
         )
-        
+
         
         # Handle file upload
         if form.logo.data:
