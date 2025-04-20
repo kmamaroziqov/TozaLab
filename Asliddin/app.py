@@ -173,6 +173,7 @@ def add_service():
             company_id=company.id
         )
         
+        
         # Handle file upload
         if form.logo.data:
             filename = secure_filename(form.logo.data.filename)
