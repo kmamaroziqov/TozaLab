@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 @routes.route('/')
 def home():
     return render_template('home.html')
+
 #--------------------- Register endpoint
 @routes.route('/register', methods=['POST'])
 def register():
@@ -50,7 +51,7 @@ def register():
 def search():
     query = request.args.get('query', '')
     services = Service.query.filter(Service.name.contains(query)).all()
-    return render_template('search.html', services=services)
+    return render_template('user/search.html', services=services)
 
 
 # Service Detail Route
@@ -62,7 +63,6 @@ def service_detail(service_id):
 
 # Add this to app.py
 @routes.route('/admin/Admins/create', methods=['GET', 'POST'])
-@role_required(['Admin', 'Super Admin'])
 def create_Admin():
     if request.method == 'POST':
         Adminname = request.form.get('Adminname')
@@ -82,7 +82,6 @@ def create_Admin():
     return render_template('create_Admin.html')  # Create a new template
 
 @routes.route('/Admins/<int:Admin_id>/edit', methods=['GET', 'POST'])
-@role_required(['Admin', 'Super Admin'])
 def edit_Admin(Admin_id):
     Admin = Admin.query.get(Admin_id)
     if not Admin:
@@ -129,7 +128,7 @@ def login():
 
 #--------------------- Admin endpoints
 @routes.route('/Admins', methods=['GET'])
-@role_required(['Super Admin'])  # Only Super Admins can access this route
+uper Admins can access this route
 def get_Admins():
     Admins = db.session.query(Admin).all()
     Admin_list = [
@@ -145,7 +144,7 @@ def get_Admins():
 
 # Get a single Admin by ID (Admin only)
 @routes.route('/Admins/<int:Admin_id>', methods=['GET'])
-@role_required(['Super Admin'])  # Only Super Admins can access this route
+uper Admins can access this route
 def get_Admin(Admin_id):
     Admin = db.session.query(Admin).get(Admin_id)
     if not Admin:
@@ -158,7 +157,7 @@ def get_Admin(Admin_id):
 
 # Update a Admin (Admin only)
 @routes.route('/Admins/<int:Admin_id>', methods=['PUT'])
-@role_required(['Super Admin'])  # Only Super Admins can access this route
+uper Admins can access this route
 def update_Admin(Admin_id):
     data = request.get_json()
     Admin = db.session.query(Admin).get(Admin_id)
@@ -172,7 +171,6 @@ def update_Admin(Admin_id):
 
 # Delete a Admin (Admin only)
 @routes.route('/Admins/<int:Admin_id>', methods=['POST'])
-@role_required(['Super Admin', 'Admin'])
 def delete_Admin(Admin_id):
     if request.form.get('_method') == 'DELETE':
         Admin = db.session.query(Admin).get(Admin_id)
@@ -186,7 +184,7 @@ def delete_Admin(Admin_id):
 
 # Search Admins (Admin only)
 @routes.route('/Admins/search', methods=['GET'])
-@role_required(['Super Admin'])  # Only Super Admins can access this route
+uper Admins can access this route
 def search_Admins():
     query = request.args.get('q', '').strip()
     if not query:
@@ -277,7 +275,7 @@ def delete_service(service_id):
 
 #--------------------- Category endpoints
 @routes.route('/categories', methods=['POST'])
-@role_required(['Admin', 'Super Admin'])  # Only Admins can access this route
+ # Only Admins can access this route
 def create_category():
     data = request.get_json()
     name = data.get('name')
@@ -298,7 +296,7 @@ def list_categories():
 
 # Delete a category (Admin only)
 @routes.route('/categories/<int:category_id>', methods=['DELETE'])
-@role_required(['Admin', 'Super Admin'])  # Only Admins can access this route
+ # Only Admins can access this route
 def delete_category(category_id):
     category = db.session.query(Category).get(category_id)
     if not category:
@@ -357,7 +355,7 @@ def process_payment():
 
 #--------------------- Review endpoints
 @routes.route('/reviews', methods=['GET'])
-@role_required(['Admin', 'Super Admin'])  # Only admins can access this route
+ # Only admins can access this route
 def get_reviews():
     reviews = db.session.query(Review).all()
     review_list = [
@@ -374,7 +372,7 @@ def get_reviews():
 
 # Get a single review by ID (Admin only)
 @routes.route('/reviews/<int:review_id>', methods=['GET'])
-@role_required(['Admin', 'Super Admin'])  # Only admins can access this route
+ # Only admins can access this route
 def get_review(review_id):
     review = db.session.query(Review).get(review_id)
     if not review:
@@ -410,7 +408,7 @@ def create_review():
 
 # Approve a review (Admin only)
 @routes.route('/reviews/<int:review_id>/approve', methods=['POST'])
-@role_required(['Admin', 'Super Admin'])  # Only admins can access this route
+ # Only admins can access this route
 def approve_review(review_id):
     review = db.session.query(Review).get(review_id)
     if not review:
@@ -421,7 +419,7 @@ def approve_review(review_id):
 
 # Reject a review (Admin only)
 @routes.route('/reviews/<int:review_id>/reject', methods=['POST'])
-@role_required(['Admin', 'Super Admin'])  # Only admins can access this route
+ # Only admins can access this route
 def reject_review(review_id):
     review = db.session.query(Review).get(review_id)
     if not review:
@@ -432,7 +430,7 @@ def reject_review(review_id):
 
 # Delete a review (Admin only)
 @routes.route('/reviews/<int:review_id>', methods=['DELETE'])
-@role_required(['Admin', 'Super Admin'])  # Only admins can access this route
+ # Only admins can access this route
 def delete_review(review_id):
     review = db.session.query(Review).get(review_id)
     if not review:
@@ -444,7 +442,7 @@ def delete_review(review_id):
 #------------------ Admin endpoints
 
 @routes.route('/admin/dashboard', methods=['GET'])
-@role_required(['Admin', 'Super Admin'])  # Only Admins and Super Admins can access this route
+ # Only Admins and Super Admins can access this route
 def admin_dashboard():
     return render_template('admin_dashboard.html', logout_url=url_for('admin_logout'))
 
@@ -452,7 +450,7 @@ def admin_dashboard():
 # Task 1: Show HTML Admin Login Page (GET request)
 @routes.route('/admin/login', methods=['GET'])
 def admin_login_page():
-    return render_template('admin_login.html')
+    return render_template('admin/admin_login.html')
 
 # Task 2: Handle Admin Login (POST request)
 @routes.route('/admin/login', methods=['POST'])
@@ -480,7 +478,6 @@ def admin_login():
 # --------admin logout    
 # ✅ Admin Logout Route (Updated)
 @routes.route('/admin/logout', methods=['GET', 'POST'])
-@role_required(['Admin', 'Super Admin'])
 def admin_logout():
     if request.method == 'POST' or request.method == 'GET':
         response = make_response(redirect(url_for('admin_login_page')))
@@ -493,19 +490,16 @@ def admin_logout():
 
 # ✅ Add Routes for Admin Panel Buttons
 @routes.route('/admin/Admins', methods=['GET'])
-@role_required(['Admin', 'Super Admin'])
 def admin_manage_Admins():
     Admins = Admin.query.all()
     return render_template('admin_Admins.html', Admins=Admins)
 
 @routes.route('/admin/services', methods=['GET'])
-@role_required(['Admin', 'Super Admin'])
 def admin_manage_services():
     services = Service.query.all()
     return render_template('admin_services.html', services=services)
 
 @routes.route('/admin/reviews', methods=['GET'])
-@role_required(['Admin', 'Super Admin'])
 def admin_manage_reviews():
     reviews = Review.query.all()
     return render_template('admin_reviews.html', reviews=reviews)
@@ -513,7 +507,6 @@ def admin_manage_reviews():
 
 #----------Broadcast Notification
 @routes.route('/admin/broadcast', methods=['POST'])
-@role_required(['Admin', 'Super Admin'])
 def broadcast_notification():
     title = request.form.get('title')
     body = request.form.get('body')
