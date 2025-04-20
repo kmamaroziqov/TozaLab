@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, session, flash, jsonify, make_response
 from application import db
-from models import Admin, Service, Category, Transaction, Review
+from models import Admin, Service, Category, Transaction, Review, User
 from config import stripe
 from auth import hash_password, verify_password, create_jwt_token, role_required
 from firebase_setup import broadcast_to_topic
@@ -24,27 +24,46 @@ def home():
     return render_template('home.html')
 
 #--------------------- Register endpoint
-@routes.route('/register', methods=['POST'])
+@routes.route('/register', methods=['GET', 'POST'])
 def register():
-    data = request.get_json()
-    Adminname = data.get('Adminname')
-    password = data.get('password')
-    role = data.get('role', 'Admin')  # Default role is "Admin"
+    if request.method == 'POST':
+        full_name = request.form.get('full_name')
+        email = request.form.get('email')
+        phone_number = request.form.get('phone_number')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
 
-    if not Adminname or not password:
-        return jsonify({"message": "Adminname and password are required"}), 400
+        # Validation
+        if not all([full_name, email, phone_number, password, confirm_password]):
+            flash("All fields are required.", "danger")
+            return redirect(url_for('routes.register'))
 
-    # Check if the Admin already exists
-    existing_Admin = db.session.query(Admin).filter_by(Adminname=Adminname).first()
-    if existing_Admin:
-        return jsonify({"message": "Admin already exists"}), 400
+        if password != confirm_password:
+            flash("Passwords do not match.", "danger")
+            return redirect(url_for('routes.register'))
 
-    # Hash the password and create a new Admin
-    password_hash = hash_password(password)
-    new_Admin = Admin(Adminname=Adminname, password_hash=password_hash, role=role)
-    db.session.add(new_Admin)
-    db.session.commit()
-    return jsonify({"message": "Admin registered successfully"}), 201
+        # Check for existing user by full name
+        existing_user = User.query.filter_by(full_name=full_name).first()
+        if existing_user:
+            flash("A user with this name already exists.", "danger")
+            return redirect(url_for('routes.register'))
+
+        # Create new user
+        hashed_password = hash_password(password)
+        new_user = User(
+            full_name=full_name,
+            email=email,
+            phone_number=phone_number,
+            password_hash=hashed_password
+        )
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash("Registration successful. Please log in.", "success")
+        return redirect(url_for('routes.login'))
+
+    # GET request: Render registration form
+    return render_template('user/user_register.html')
 
 # Service Search Route
 @routes.route('/search', methods=['GET'])
@@ -102,33 +121,32 @@ def edit_Admin(Admin_id):
 
 #--------------------- Login endpoint
 # Enhanced Login Route with Error Logging
-@routes.route('/login', methods=['POST'])
+@routes.route('/login', methods=['GET', 'POST'])
 def login():
-    try:
-        data = request.get_json()
-        Adminname = data.get('Adminname')
-        password = data.get('password')
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
 
-        if not Adminname or not password:
-            logger.warning("Login attempt with missing credentials")
-            return jsonify({"message": "Adminname and password are required"}), 400
+        if not email or not password:
+            flash("Email and password are required.", "danger")
+            return redirect(url_for('routes.login'))
 
-        Admin = Admin.query.filter_by(Adminname=Adminname).first()
-        if not Admin or not verify_password(password, Admin.password_hash):
-            logger.warning(f"Failed login attempt for Adminname: {Adminname}")
-            return jsonify({"message": "Invalid credentials"}), 401
+        user = User.query.filter_by(email=email).first()
 
-        token = create_jwt_token(Admin)
-        logger.info(f"Admin {Adminname} logged in successfully")
-        return jsonify({"token": token}), 200
+        if user and verify_password(password, user.password_hash):
+            # Successful login – store user info in session
+            session['user_id'] = user.id
+            session['user_name'] = user.full_name
+            flash(f"Welcome back, {user.full_name}!", "success")
+            return redirect(url_for('routes.home'))
 
-    except Exception as e:
-        logger.error(f"Login error: {e}")
-        return jsonify({"message": "An error occurred during login"}), 500
+        flash("Invalid email or password.", "danger")
+        return redirect(url_for('routes.login'))
+
+    return render_template('user/user_login.html')
 
 #--------------------- Admin endpoints
 @routes.route('/Admins', methods=['GET'])
-uper Admins can access this route
 def get_Admins():
     Admins = db.session.query(Admin).all()
     Admin_list = [
@@ -144,7 +162,6 @@ def get_Admins():
 
 # Get a single Admin by ID (Admin only)
 @routes.route('/Admins/<int:Admin_id>', methods=['GET'])
-uper Admins can access this route
 def get_Admin(Admin_id):
     Admin = db.session.query(Admin).get(Admin_id)
     if not Admin:
@@ -157,7 +174,6 @@ def get_Admin(Admin_id):
 
 # Update a Admin (Admin only)
 @routes.route('/Admins/<int:Admin_id>', methods=['PUT'])
-uper Admins can access this route
 def update_Admin(Admin_id):
     data = request.get_json()
     Admin = db.session.query(Admin).get(Admin_id)
@@ -184,7 +200,6 @@ def delete_Admin(Admin_id):
 
 # Search Admins (Admin only)
 @routes.route('/Admins/search', methods=['GET'])
-uper Admins can access this route
 def search_Admins():
     query = request.args.get('q', '').strip()
     if not query:
@@ -275,7 +290,7 @@ def delete_service(service_id):
 
 #--------------------- Category endpoints
 @routes.route('/categories', methods=['POST'])
- # Only Admins can access this route
+ # Only Admins 
 def create_category():
     data = request.get_json()
     name = data.get('name')
@@ -296,7 +311,7 @@ def list_categories():
 
 # Delete a category (Admin only)
 @routes.route('/categories/<int:category_id>', methods=['DELETE'])
- # Only Admins can access this route
+ # Only Admins 
 def delete_category(category_id):
     category = db.session.query(Category).get(category_id)
     if not category:
@@ -355,7 +370,7 @@ def process_payment():
 
 #--------------------- Review endpoints
 @routes.route('/reviews', methods=['GET'])
- # Only admins can access this route
+ # Only admins 
 def get_reviews():
     reviews = db.session.query(Review).all()
     review_list = [
@@ -372,7 +387,7 @@ def get_reviews():
 
 # Get a single review by ID (Admin only)
 @routes.route('/reviews/<int:review_id>', methods=['GET'])
- # Only admins can access this route
+ # Only admins 
 def get_review(review_id):
     review = db.session.query(Review).get(review_id)
     if not review:
@@ -408,7 +423,7 @@ def create_review():
 
 # Approve a review (Admin only)
 @routes.route('/reviews/<int:review_id>/approve', methods=['POST'])
- # Only admins can access this route
+ # Only admins 
 def approve_review(review_id):
     review = db.session.query(Review).get(review_id)
     if not review:
@@ -419,7 +434,7 @@ def approve_review(review_id):
 
 # Reject a review (Admin only)
 @routes.route('/reviews/<int:review_id>/reject', methods=['POST'])
- # Only admins can access this route
+ # Only admins 
 def reject_review(review_id):
     review = db.session.query(Review).get(review_id)
     if not review:
@@ -430,7 +445,7 @@ def reject_review(review_id):
 
 # Delete a review (Admin only)
 @routes.route('/reviews/<int:review_id>', methods=['DELETE'])
- # Only admins can access this route
+ # Only admins 
 def delete_review(review_id):
     review = db.session.query(Review).get(review_id)
     if not review:
@@ -442,7 +457,7 @@ def delete_review(review_id):
 #------------------ Admin endpoints
 
 @routes.route('/admin/dashboard', methods=['GET'])
- # Only Admins and Super Admins can access this route
+ # Only Admins and Super Admins 
 def admin_dashboard():
     return render_template('admin_dashboard.html', logout_url=url_for('admin_logout'))
 
@@ -514,13 +529,15 @@ def broadcast_notification():
     flash('Announcement sent to all Admins!', 'success')
     return redirect(url_for('admin_dashboard'))
 
-# API Error Logging Middleware
 @routes.errorhandler(Exception)
 def handle_api_error(error):
     logger.error(f"API error: {error}")
-    response = jsonify({"message": "An internal error occurred."})
-    response.status_code = 500
-    return response
+    if request.path.startswith('/api') or request.is_json:
+        response = jsonify({"message": "An internal error occurred."})
+        response.status_code = 500
+        return response
+    else:
+        return render_template("error.html", error=error), 500
 
 logger.info("Logging configuration complete.")
 
