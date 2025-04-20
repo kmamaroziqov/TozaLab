@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from forms import LoginForm, SignupForm, ServiceForm, TodoForm
+from froms import LoginForm, SignupForm, ServiceForm, TodoForm
 import os
 from datetime import datetime
 from config import Config
@@ -16,7 +16,7 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'log_in'
 
 # Import models after db initialization to avoid circular imports
-from models import User, Company, Service, Bookings, Comments, TODOO
+from models import Provider, Company, Service, Bookings, Comments, TODOO  # Changed User to Provider
 
 @app.route('/')
 def index():
@@ -29,28 +29,28 @@ def signup():
     form = SignupForm()
     if form.validate_on_submit():
         # Check if username exists
-        if User.query.filter_by(username=form.company.data).first():
+        if Provider.query.filter_by(username=form.company.data).first():  # Changed User to Provider
             flash('Username already exists', 'error')
             return redirect(url_for('signup'))
         
-        # Create user
-        user = User(
+        # Create provider (previously user)
+        provider = Provider(  # Changed User to Provider
             username=form.company.data,
             password=generate_password_hash(form.pwd.data)
         )
-        db.session.add(user)
+        db.session.add(provider)
         db.session.commit()
         
         # Create company
         company = Company(
             phone=form.phone.data,
             location=form.loc.data,
-            user_id=user.id
+            provider_id=provider.id  # Changed user_id to provider_id
         )
         db.session.add(company)
         db.session.commit()
         
-        login_user(user)
+        login_user(provider)  # Changed user to provider
         return redirect(url_for('home'))
     
     return render_template('signup.html', form=form)
@@ -59,23 +59,17 @@ def signup():
 def log_in():
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.fnm.data).first()
-        if user and check_password_hash(user.password, form.pwd.data):
-            login_user(user)
+        provider = Provider.query.filter_by(username=form.fnm.data).first()  # Changed User to Provider
+        if provider and check_password_hash(provider.password, form.pwd.data):  # Changed user to provider
+            login_user(provider)  # Changed user to provider
             return redirect(url_for('home'))
         flash('Invalid username or password', 'error')
     return render_template('login.html', form=form)
 
-@app.route('/signout/')
-@login_required
-def signout():
-    logout_user()
-    return redirect(url_for('log_in'))
-
 @app.route('/home/')
 @login_required
 def home():
-    company = Company.query.filter_by(user_id=current_user.id).order_by(Company.date.desc()).first()
+    company = Company.query.filter_by(provider_id=current_user.id).order_by(Company.date.desc()).first()  # Changed user_id to provider_id
     services = Service.query.filter_by(company_id=company.id).all() if company else []
     
     # Calculate average rating
@@ -93,20 +87,20 @@ def todo():
     if form.validate_on_submit():
         todo = TODOO(
             title=form.title.data,
-            user_id=current_user.id
+            provider_id=current_user.id  # Changed user_id to provider_id
         )
         db.session.add(todo)
         db.session.commit()
         return redirect(url_for('todo'))
     
-    todos = TODOO.query.filter_by(user_id=current_user.id).order_by(TODOO.date.desc()).all()
+    todos = TODOO.query.filter_by(provider_id=current_user.id).order_by(TODOO.date.desc()).all()  # Changed user_id to provider_id
     return render_template('todo.html', form=form, res=todos)
 
 @app.route('/edit_todo/<int:srno>', methods=['GET', 'POST'])
 @login_required
 def edit_todo(srno):
     todo = TODOO.query.get_or_404(srno)
-    if todo.user_id != current_user.id:
+    if todo.provider_id != current_user.id:  # Changed user_id to provider_id
         abort(403)
     
     form = TodoForm(obj=todo)
@@ -121,7 +115,7 @@ def edit_todo(srno):
 @login_required
 def delete_todo(srno):
     todo = TODOO.query.get_or_404(srno)
-    if todo.user_id != current_user.id:
+    if todo.provider_id != current_user.id:  # Changed user_id to provider_id
         abort(403)
     
     db.session.delete(todo)
@@ -131,7 +125,7 @@ def delete_todo(srno):
 @app.route('/bookings/')
 @login_required
 def bookings():
-    company = Company.query.filter_by(user_id=current_user.id).order_by(Company.date.desc()).first()
+    company = Company.query.filter_by(provider_id=current_user.id).order_by(Company.date.desc()).first()  # Changed user_id to provider_id
     if not company:
         return redirect(url_for('home'))
     
@@ -168,7 +162,7 @@ def bookings():
 def add_service():
     form = ServiceForm()
     if form.validate_on_submit():
-        company = Company.query.filter_by(user_id=current_user.id).first()
+        company = Company.query.filter_by(provider_id=current_user.id).first()  # Changed user_id to provider_id
         if not company:
             flash('You need to create a company first', 'error')
             return redirect(url_for('home'))
@@ -195,7 +189,7 @@ def add_service():
 @app.route('/comments/')
 @login_required
 def comments():
-    company = Company.query.filter_by(user_id=current_user.id).order_by(Company.date.desc()).first()
+    company = Company.query.filter_by(provider_id=current_user.id).order_by(Company.date.desc()).first()  # Changed user_id to provider_id
     if not company:
         return redirect(url_for('home'))
     
@@ -204,7 +198,7 @@ def comments():
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return Provider.query.get(int(user_id))  # Changed User to Provider
 
 if __name__ == '__main__':
     with app.app_context():

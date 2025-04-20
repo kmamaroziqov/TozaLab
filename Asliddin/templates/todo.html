@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todos</title>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" />
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+
+    <link rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css"/>
+
+    <script src="https://kit.fontawesome.com/cb792c0850.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div class="signup-login">
+        <div>
+            <div>
+                <h1>Hello {{ user }}</h1>
+            </div>
+            
+            <div class="signup-box scr">
+                <div class="heads">
+                    <div class="heading">Get things done!</div>
+                    <div class="anca">
+                        <a href="{{ url_for('signout') }}" class="sign">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {{ csrf_token() }} <!-- Optional, if using Flask-WTF -->
+                    <input type="text" class="inp" name="title" required placeholder="Enter a task: ">
+                    <input type="submit" class="submit-button" value="Add Task">
+                </form>
+
+                {% for todo in res %}
+                <div class="Todo">
+                    <h5>{{ todo.srno }}</h5>
+                    <p>{{ todo.title }}</p>
+                    <div>
+                        <a href="{{ url_for('edit_todo', srno=todo.srno) }}">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </a>
+                        <a href="{{ url_for('delete_todo', srno=todo.srno) }}">
+                            <i class="fa-solid fa-trash"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
