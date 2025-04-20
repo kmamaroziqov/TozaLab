@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adding service</title>
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" />
+    
+    <link rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css"/>
+
+    <script src="https://kit.fontawesome.com/cb792c0850.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="signup-login">
+        <div class="signup-box">
+            <div class="anca"><a href="{{ url_for('home') }}" class="sign"><i
+                class="fa-solid fa-right-from-bracket"></i></a></div>
+            <form method="post" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="heading">
+                    Service infos:
+                </div>
+                <div class="line"></div>
+                <div class="field">
+                    <b>Service name: </b>
+                    <input type="text" class="inp" required placeholder="company name" name="name"/>
+                </div>
+                <div class="field">
+                    <b>Description: </b>
+                    <input type="text" class="inp" required placeholder="description" name="desc"/>
+                </div>
+                
+                <!-- Add file upload field for logo if needed -->
+                <div class="field">
+                    <b>Logo: </b>
+                    <input type="file" class="inp" name="logo"/>
+                </div>
+                
+                <div class="field">
+                    <input type="submit" class="submit-button" value="Submit">
+                </div>
+                <div class="line"></div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

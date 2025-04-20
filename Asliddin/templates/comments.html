@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comments</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+    <div class="header">
+        <h1>Comments</h1>
+        <div class="field">
+            <a class="anc" href="{{ url_for('home') }}">back</a>
+        </div>
+    </div>
+
+    {% for comment in comments %}
+    <div class="bookings-container">
+        <div class="booking-item">
+            <p>{{ comment.commenter }}</p>
+            <p>{{ comment.comment }}</p>
+        </div>
+    </div>
+    {% endfor %}
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

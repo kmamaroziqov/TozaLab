@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booked Services</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+    <div class="header">
+        <h1>Booked Services</h1>
+        <div class="field">
+            <a class="anc" href="{{ url_for('home') }}">back</a>
+        </div>
+    </div>
+
+    <form method="GET" action="{{ url_for('bookings') }}">
+        <input type="text" name="search" placeholder="Search by booker, time, or location" value="{{ request.args.get('search', '') }}">
+        <button type="submit">Search</button>
+    </form>
+
+    <!-- Sorting Links -->
+    <div>
+        <strong>Sort by:</strong>
+        <a href="?sort_by=time">Time</a> |
+        <a href="?sort_by=service">Service</a> |
+        <a href="?sort_by=booker">Booker</a> |
+        <a href="?sort_by=location">Location</a>
+    </div>
+
+    {% for booking in bookings %}
+    <div class="bookings-container">
+        <div class="booking-item">
+            <p>{{ booking.booker }}</p>
+            <p>{{ booking.time.strftime('%H:%M') if booking.time else '' }}</p>
+            <p>{{ booking.location }}</p>
+            <p>{{ booking.usercomment }}</p>
+            <p>{{ booking.procomment }}</p>
+            <p>{{ booking.service.name if booking.service else '' }}</p>
+        </div>
+    </div>
+    {% endfor %}
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

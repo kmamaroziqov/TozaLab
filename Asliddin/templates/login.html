@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log in</title>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" />
+
+    <link rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css"/>
+
+    <script src="https://kit.fontawesome.com/cb792c0850.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div class="signup-login">
+        <div class="signup-box">
+            <form method="post">
+                {{ csrf_token() }}  <!-- Only if using Flask-WTF and CSRF protection -->
+                <div class="heading">
+                    Log in
+                </div>
+                <div class="line"></div>
+                <div class="field">
+                    <b>company</b>
+                    <input type="text" class="inp" required placeholder="company: " name="fnm"/>
+                </div>
+                <div class="field">
+                    <b>password</b>
+                    <input type="password" class="inp" required placeholder="password: " name="pwd"/>
+                </div>
+                <div class="field">
+                    <input type="submit" class="submit-button" value="Login">
+                </div>
+                <div class="line">  </div>
+            </form>
+            <div class="field">
+                <a class="anc" href="{{ url_for('signup') }}" style="margin-left:130px;">Don't have an account</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

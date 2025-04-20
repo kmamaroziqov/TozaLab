@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provider Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+    <div class="top-bar">
+        {% if company.logo %}
+        <img src="{{ url_for('static', filename='uploads/logos/' + company.logo) }}" alt="Company Logo">
+        {% else %}
+        <span>No Logo</span>
+        {% endif %}
+        <div class="info">
+            <span>#infos of pay</span>
+            <div class="field">
+                <a class="anc" style="margin-left:130px;" href="{{ url_for('comments') }}">Comments</a>
+            </div>
+            <div class="field">
+                <a class="anc" style="margin-left:130px;">Rating: {{ company.rating }}</a>
+            </div>
+            <div class="field">
+                <a class="anc" style="margin-left:130px;" href="{{ url_for('add_service') }}">Add service</a>
+            </div>
+            
+            <button onclick="goToSettings()">#Settings</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <aside class="sidebar">
+            <h3>Company Info</h3>
+            <p class="anca"><a href="{{ url_for('signout') }}" class="sign">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </a></p>
+        
+            <p>{{ company.phone }}</p>
+            <p>{{ company.location }}</p>
+            <p>License</p>
+            <p>Service Location</p>
+            <div class="field">
+                <a class="anc" href="{{ url_for('bookings') }}">Bookings</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <h2>Services</h2>
+            <div class="service-list">
+                {% for service in services %}
+                    <a href="{{ url_for('bookings') }}">
+                        <div class="service-item">
+                            {% if service.logo %}
+                                <img src="{{ url_for('static', filename='uploads/logos/' + service.logo) }}" alt="Service Logo">
+                            {% else %}
+                                <span>No Logo</span>
+                            {% endif %}
+                            <div class="info">
+                                <p>{{ service.name }}</p>
+                                <p>{{ service.rating }}</p>
+                                <p>{{ service.description }}</p>
+                            </div>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>
