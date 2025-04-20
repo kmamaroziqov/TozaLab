@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 @routes.route('/')
 def home():
     return render_template('home.html')
+
 #--------------------- Register endpoint
 @routes.route('/register', methods=['POST'])
 def register():
@@ -452,7 +453,7 @@ def admin_dashboard():
 # Task 1: Show HTML Admin Login Page (GET request)
 @routes.route('/admin/login', methods=['GET'])
 def admin_login_page():
-    return render_template('admin_login.html')
+    return render_template('admin/admin_login.html')
 
 # Task 2: Handle Admin Login (POST request)
 @routes.route('/admin/login', methods=['POST'])
