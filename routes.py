@@ -27,14 +27,14 @@ def home():
 @routes.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        full_name = request.form.get('full_name')
+        username = request.form.get('username')
         email = request.form.get('email')
         phone_number = request.form.get('phone_number')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
 
         # Validation
-        if not all([full_name, email, phone_number, password, confirm_password]):
+        if not all([username, email, phone_number, password, confirm_password]):
             flash("All fields are required.", "danger")
             return redirect(url_for('routes.register'))
 
@@ -43,7 +43,7 @@ def register():
             return redirect(url_for('routes.register'))
 
         # Check for existing user by full name
-        existing_user = User.query.filter_by(full_name=full_name).first()
+        existing_user = User.query.filter_by(username=username).first()
         if existing_user:
             flash("A user with this name already exists.", "danger")
             return redirect(url_for('routes.register'))
@@ -51,7 +51,7 @@ def register():
         # Create new user
         hashed_password = hash_password(password)
         new_user = User(
-            full_name=full_name,
+            username=username,
             email=email,
             phone_number=phone_number,
             password_hash=hashed_password
@@ -65,13 +65,37 @@ def register():
     # GET request: Render registration form
     return render_template('user/user_register.html')
 
+#--------------------- Login endpoint
+# Enhanced Login Route with Error Logging
+@routes.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        if not email or not password:
+            flash("Email and password are required.", "danger")
+            return redirect(url_for('routes.login'))
+
+        user = User.query.filter_by(email=email).first()
+
+        if user and verify_password(password, user.password_hash):
+            session['user_id'] = user.id
+            session['user_name'] = user.username  # ✅ using username
+            flash(f"Welcome back, {user.username}!", "success")
+            return redirect(url_for('routes.home'))
+
+        flash("Invalid email or password.", "danger")
+        return redirect(url_for('routes.login'))
+
+    return render_template('user/user_login.html')
+
 # Service Search Route
 @routes.route('/search', methods=['GET'])
 def search():
     query = request.args.get('query', '')
     services = Service.query.filter(Service.name.contains(query)).all()
     return render_template('user/search.html', services=services)
-
 
 # Service Detail Route
 @routes.route('/service/<int:service_id>', methods=['GET'])
@@ -80,7 +104,28 @@ def service_detail(service_id):
     reviews = Review.query.filter_by(service_id=service_id).all()
     return render_template('service_detail.html', service=service, reviews=reviews)
 
-# Add this to app.py
+#--------------------- Admin endpoints
+@routes.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        email = request.form.get('username')
+        password = request.form.get('password')
+
+        if not email or not password:
+            flash("Email and password are required.", "danger")
+            return redirect(url_for('routes.login'))
+
+        user = User.query.filter_by(email=email).first()
+        if user and verify_password(password, user.password_hash):
+            session['user_id'] = user.id
+            session['user_name'] = user.username
+            flash(f"Welcome back, {user.username}!", "success")
+            return redirect(url_for('routes.home'))
+
+        flash("Invalid email or password.", "danger")
+        return redirect(url_for('routes.home'))
+    return render_template('admin/admin_login.html')
+
 @routes.route('/admin/Admins/create', methods=['GET', 'POST'])
 def create_Admin():
     if request.method == 'POST':
@@ -119,33 +164,7 @@ def edit_Admin(Admin_id):
     
     return render_template('edit_Admin.html', Admin=Admin)
 
-#--------------------- Login endpoint
-# Enhanced Login Route with Error Logging
-@routes.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-
-        if not email or not password:
-            flash("Email and password are required.", "danger")
-            return redirect(url_for('routes.login'))
-
-        user = User.query.filter_by(email=email).first()
-
-        if user and verify_password(password, user.password_hash):
-            # Successful login – store user info in session
-            session['user_id'] = user.id
-            session['user_name'] = user.full_name
-            flash(f"Welcome back, {user.full_name}!", "success")
-            return redirect(url_for('routes.home'))
-
-        flash("Invalid email or password.", "danger")
-        return redirect(url_for('routes.login'))
-
-    return render_template('user/user_login.html')
-
-#--------------------- Admin endpoints
+#--------------------- Admin endpoints----
 @routes.route('/Admins', methods=['GET'])
 def get_Admins():
     Admins = db.session.query(Admin).all()
