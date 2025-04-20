@@ -136,10 +136,12 @@ class SupportTicket(db.Model):
 
 class Company(db.Model):
     __tablename__ = 'companies'
-    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=True)
+    id = db.Column(db.Integer, primary_key=True, nullable=True)
+    name= db.Column(db.String(100))
     phone = db.Column(db.String(15), nullable=False)
     location = db.Column(db.String(255), nullable=False)
-    license_pdf = db.Column(db.String(255))  # Path to file
+    license_pdf = db.Column(db.String(255)) 
     logo = db.Column(db.String(255)) 
     date = db.Column(db.DateTime, default=datetime.utcnow)
     service=db.relationship('Service', backref='company', lazy=True) 

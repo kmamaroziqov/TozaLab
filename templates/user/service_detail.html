@@ -13,7 +13,7 @@
                 <p class="card-text">{{ service.description }}</p>
                 <p class="card-text"><strong>Price:</strong> ${{ service.price }}</p>
                 <p class="card-text"><strong>Location:</strong> {{ service.location }}</p>
-                <a href="{{ url_for('booking', service_id=service.id) }}" class="btn btn-success">Book Now</a>
+                <a href="{{ url_for('routes.booking', service_id=service.id) }}" class="btn btn-success">Book Now</a>
             </div>
         </div>
 

@@ -1,32 +1,37 @@
-<!-- templates/create_user.html (New Template) -->
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Create New User</title>
+    <title>Create Admin</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 30px; }
-        form { background-color: #f7f7f7; padding: 20px; border-radius: 8px; }
-        input, select { padding: 10px; margin-bottom: 15px; width: 100%; }
-        button { padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        form { background-color: #f7f7f7; padding: 20px; border-radius: 8px; width: 300px; margin: auto; }
+        input { padding: 10px; margin-bottom: 15px; width: 100%; }
+        button { padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; width: 100%; }
         button:hover { background-color: #45A049; }
+        .flash { color: red; margin-bottom: 10px; text-align: center; }
     </style>
 </head>
 <body>
-    <h1>Create New User</h1>
-    <form method="POST" action="{{ url_for('create_user') }}">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" placeholder="Enter username" required>
+    <h2 style="text-align:center;">Create New Admin</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash">
+          {% for category, message in messages %}
+            <p class="{{ category }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('routes.create_admin') }}">
+        <label for="adminname">Adminname:</label>
+        <input type="text" id="adminname" name="adminname" placeholder="Enter admin name" required>
 
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" placeholder="Enter password" required>
 
-        <label for="role">Role:</label>
-        <select id="role" name="role">
-            <option value="Admin">Admin</option>
-            <option value="Super Admin">Super Admin</option>
-        </select>
-
-        <button type="submit">Create User</button>
+        <button type="submit">Create Admin</button>
     </form>
 </body>
 </html>

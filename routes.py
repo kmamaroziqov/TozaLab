@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, session, flash, jsonify, make_response
 from application import db
-from models import Admin, Service, Category, Transaction, Review, User
+from models import Admin, Service, Category, Transaction, Review, User, Company, Booking
 from config import stripe
 from auth import hash_password, verify_password, create_jwt_token, role_required
 from firebase_setup import broadcast_to_topic
@@ -66,29 +66,90 @@ def register():
     return render_template('user/user_register.html')
 
 #--------------------- Login endpoint
-# Enhanced Login Route with Error Logging
-@routes.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
+# # Enhanced Login Route with Error Logging
+# @routes.route('/provider/login', methods=['GET', 'POST'])
+# def provider_login():
+#     if request.method == 'POST':
+#         email = request.form.get('email')
+#         password = request.form.get('password')
 
-        if not email or not password:
-            flash("Email and password are required.", "danger")
-            return redirect(url_for('routes.login'))
+#         if not email or not password:
+#             flash("Email and password are required.", "danger")
+#             return redirect(url_for('routes.provider_login'))
 
-        user = User.query.filter_by(email=email).first()
+#         company = Company.query.filter_by(email=email).first()
 
-        if user and verify_password(password, user.password_hash):
-            session['user_id'] = user.id
-            session['user_name'] = user.username  # ✅ using username
-            flash(f"Welcome back, {user.username}!", "success")
-            return redirect(url_for('routes.home'))
+#         if company and verify_password(password, company.password_hash):
+#             session['company_id'] = company.id
+#             session['company_name'] = company.name  # assuming 'name' is used for display
+#             flash(f"Welcome back, {company.name}!", "success")
+#             return redirect(url_for('routes.provider_dashboard'))
 
-        flash("Invalid email or password.", "danger")
+#         flash("Invalid email or password.", "danger")
+#         return redirect(url_for('routes.provider_login'))
+
+#     return render_template('provider/templates/login.html')
+
+@routes.route('/profile', methods=['GET'])
+def profile():
+    user_id = session.get('user_id')
+
+    if not user_id:
+        flash("Please login to view your profile.", "warning")
         return redirect(url_for('routes.login'))
 
-    return render_template('user/user_login.html')
+    user = User.query.get(user_id)
+    if not user:
+        flash("User not found.", "danger")
+        return redirect(url_for('routes.login'))
+
+    return render_template('user/profile.html', current_user=user)
+
+
+@routes.route('/profile/edit', methods=['GET', 'POST'])
+def edit_profile():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("You must be logged in to edit your profile.", "warning")
+        return redirect(url_for('routes.login'))
+
+    user = User.query.get(user_id)
+    if not user:
+        flash("User not found.", "danger")
+        return redirect(url_for('routes.login'))
+
+    if request.method == 'POST':
+        # Get updated form data
+        email = request.form.get('email')
+        phone_number = request.form.get('phone_number')
+
+        # Basic validation
+        if not email or not phone_number:
+            flash("All fields are required.", "danger")
+            return redirect(url_for('edit_profile'))
+
+        # Update and commit
+        user.email = email
+        user.phone_number = phone_number
+        db.session.commit()
+
+        flash("Profile updated successfully!", "success")
+        return redirect(url_for('routes.profile'))
+
+    # GET request
+    return render_template('user/edit_profile.html', current_user=user)
+
+@routes.route('/categories')
+def show_categories():
+    categories = Category.query.all()
+    return render_template('user/categories.html', categories=categories)
+
+@routes.route('/categories/<int:category_id>/services')
+def services_by_category(category_id):
+    category = Category.query.get_or_404(category_id)
+    services = Service.query.filter_by(category_id=category_id).all()
+    return render_template('user/services_by_category.html', services=services, category=category)
+
 
 # Service Search Route
 @routes.route('/search', methods=['GET'])
@@ -102,138 +163,148 @@ def search():
 def service_detail(service_id):
     service = Service.query.get_or_404(service_id)
     reviews = Review.query.filter_by(service_id=service_id).all()
-    return render_template('service_detail.html', service=service, reviews=reviews)
+    return render_template('user/service_detail.html', service=service, reviews=reviews)
 
 #--------------------- Admin endpoints
 @routes.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        email = request.form.get('username')
+        username = request.form.get('username') 
         password = request.form.get('password')
 
-        if not email or not password:
-            flash("Email and password are required.", "danger")
-            return redirect(url_for('routes.login'))
+        if not username or not password:
+            flash("Username and password are required.", "danger")
+            return redirect(url_for('routes.admin_login'))
 
-        user = User.query.filter_by(email=email).first()
-        if user and verify_password(password, user.password_hash):
-            session['user_id'] = user.id
-            session['user_name'] = user.username
-            flash(f"Welcome back, {user.username}!", "success")
-            return redirect(url_for('routes.home'))
+        admin = Admin.query.filter_by(username=username).first()
+        if admin and verify_password(password, admin.password_hash):
+            session['admin_id'] = admin.id
+            session['admin_name'] = admin.username
+            flash(f"Welcome back, {admin.username}!", "success")
+            return redirect(url_for('routes.admin_dashboard'))  
 
-        flash("Invalid email or password.", "danger")
-        return redirect(url_for('routes.home'))
+        flash("Invalid username or password.", "danger")
+        return redirect(url_for('routes.admin_login'))
+
     return render_template('admin/admin_login.html')
 
-@routes.route('/admin/Admins/create', methods=['GET', 'POST'])
-def create_Admin():
+
+@routes.route('/admin/create', methods=['GET', 'POST'])
+def create_admin():
     if request.method == 'POST':
-        Adminname = request.form.get('Adminname')
+        adminname = request.form.get('adminname')
         password = request.form.get('password')
-        role = request.form.get('role', 'Admin')
 
-        if Admin.query.filter_by(Adminname=Adminname).first():
+        # Validate inputs
+        if not adminname or not password:
+            flash('Adminname and password are required.', 'danger')
+            return redirect(url_for('create_admin'))
+
+        # Check for duplicate
+        if Admin.query.filter_by(username=adminname).first():
             flash('Adminname already exists.', 'danger')
-            return redirect(url_for('create_Admin'))
+            return redirect(url_for('routes.create_admin'))
 
-        Admin = Admin(Adminname=Adminname, password_hash=hash_password(password), role=role)
-        db.session.add(Admin)
+        # Create and store
+        new_admin = Admin(username=adminname, password_hash=hash_password(password))
+        db.session.add(new_admin)
         db.session.commit()
+
         flash('Admin created successfully!', 'success')
-        return redirect(url_for('admin_manage_Admins'))
+        return redirect(url_for('routes.admin_dashboard'))
 
-    return render_template('create_Admin.html')  # Create a new template
+    return render_template('admin/create_user.html')
+  # Create a new template
 
-@routes.route('/Admins/<int:Admin_id>/edit', methods=['GET', 'POST'])
-def edit_Admin(Admin_id):
-    Admin = Admin.query.get(Admin_id)
-    if not Admin:
-        flash('Admin not found.', 'danger')
-        return redirect(url_for('admin_manage_Admins'))
+# @routes.route('/Admins/<int:Admin_id>/edit', methods=['GET', 'POST'])
+# def edit_Admin(Admin_id):
+#     Admin = Admin.query.get(Admin_id)
+#     if not Admin:
+#         flash('Admin not found.', 'danger')
+#         return redirect(url_for('admin_manage_Admins'))
 
-    if request.method == 'POST':
-        Adminname = request.form.get('Adminname')
-        role = request.form.get('role')
+#     if request.method == 'POST':
+#         Adminname = request.form.get('Adminname')
+#         role = request.form.get('role')
         
-        Admin.Adminname = Adminname if Adminname else Admin.Adminname
-        Admin.role = role if role else Admin.role
-        db.session.commit()
-        flash('Admin updated successfully!', 'success')
-        return redirect(url_for('admin_manage_Admins'))
+#         Admin.Adminname = Adminname if Adminname else Admin.Adminname
+#         Admin.role = role if role else Admin.role
+#         db.session.commit()
+#         flash('Admin updated successfully!', 'success')
+#         return redirect(url_for('admin_manage_Admins'))
     
-    return render_template('edit_Admin.html', Admin=Admin)
+#     return render_template('edit_Admin.html', Admin=Admin)
 
 #--------------------- Admin endpoints----
-@routes.route('/Admins', methods=['GET'])
-def get_Admins():
-    Admins = db.session.query(Admin).all()
-    Admin_list = [
-        {
-            "id": Admin.id,
-            "Adminname": Admin.Adminname,
-            "role": Admin.role,
-        }
-        for Admin in Admins
-    ]
-    return jsonify(Admin_list), 200
+# @routes.route('/Admins', methods=['GET'])
+# def get_Admins():
+#     Admins = db.session.query(Admin).all()
+#     Admin_list = [
+#         {
+#             "id": Admin.id,
+#             "Adminname": Admin.Adminname,
+#             "role": Admin.role,
+#         }
+#         for Admin in Admins
+#     ]
+#     return jsonify(Admin_list), 200
 
 
-# Get a single Admin by ID (Admin only)
-@routes.route('/Admins/<int:Admin_id>', methods=['GET'])
-def get_Admin(Admin_id):
-    Admin = db.session.query(Admin).get(Admin_id)
-    if not Admin:
-        return jsonify({"message": "Admin not found"}), 404
-    return jsonify({
-        "id": Admin.id,
-        "Adminname": Admin.Adminname,
-        "role": Admin.role
-    }), 200
+# # Get a single Admin by ID (Admin only)
+# @routes.route('/Admins/<int:Admin_id>', methods=['GET'])
+# def get_Admin(Admin_id):
+#     Admin = db.session.query(Admin).get(Admin_id)
+#     if not Admin:
+#         return jsonify({"message": "Admin not found"}), 404
+#     return jsonify({
+#         "id": Admin.id,
+#         "Adminname": Admin.Adminname,
+#         "role": Admin.role
+#     }), 200
 
-# Update a Admin (Admin only)
-@routes.route('/Admins/<int:Admin_id>', methods=['PUT'])
-def update_Admin(Admin_id):
-    data = request.get_json()
-    Admin = db.session.query(Admin).get(Admin_id)
-    if not Admin:
-        return jsonify({"message": "Admin not found"}), 404
+# # Update a Admin (Admin only)
+# @routes.route('/Admins/<int:Admin_id>', methods=['PUT'])
+# def update_Admin(Admin_id):
+#     data = request.get_json()
+#     Admin = db.session.query(Admin).get(Admin_id)
+#     if not Admin:
+#         return jsonify({"message": "Admin not found"}), 404
 
-    # Update fields if provided
-    Admin.role = data.get('role', Admin.role)
-    db.session.commit()
-    return jsonify({"message": "Admin updated successfully"}), 200
+#     # Update fields if provided
+#     Admin.role = data.get('role', Admin.role)
+#     db.session.commit()
+#     return jsonify({"message": "Admin updated successfully"}), 200
 
-# Delete a Admin (Admin only)
-@routes.route('/Admins/<int:Admin_id>', methods=['POST'])
-def delete_Admin(Admin_id):
-    if request.form.get('_method') == 'DELETE':
-        Admin = db.session.query(Admin).get(Admin_id)
-        if not Admin:
-            return jsonify({"message": "Admin not found"}), 404
-        db.session.delete(Admin)
-        db.session.commit()
-        flash('Admin deleted successfully', 'success')
-        return redirect(url_for('admin_manage_Admins'))
-    return jsonify({"message": "Invalid request"}), 400
+# # Delete a Admin (Admin only)
+# @routes.route('/Admins/<int:Admin_id>', methods=['POST'])
+# def delete_Admin(Admin_id):
+#     if request.form.get('_method') == 'DELETE':
+#         Admin = db.session.query(Admin).get(Admin_id)
+#         if not Admin:
+#             return jsonify({"message": "Admin not found"}), 404
+#         db.session.delete(Admin)
+#         db.session.commit()
+#         flash('Admin deleted successfully', 'success')
+#         return redirect(url_for('admin_manage_Admins'))
+#     return jsonify({"message": "Invalid request"}), 400
 
 # Search Admins (Admin only)
-@routes.route('/Admins/search', methods=['GET'])
-def search_Admins():
-    query = request.args.get('q', '').strip()
-    if not query:
-        return jsonify({"message": "Search query is required"}), 400
+# @routes.route('/Admins/search', methods=['GET'])
+# def search_Admins():
+#     query = request.args.get('q', '').strip()
+#     if not query:
+#         return jsonify({"message": "Search query is required"}), 400
 
-    Admins = db.session.query(Admin).filter(Admin.Adminname.ilike(f'%{query}%')).all()
-    Admin_list = [
-        {
-            "id": Admin.id,
-            "Adminname": Admin.Adminname,
-            "role": Admin.role
-        }
-        for Admin in Admins
-    ]
-    return jsonify(Admin_list), 200
+#     Admins = db.session.query(Admin).filter(Admin.Adminname.ilike(f'%{query}%')).all()
+#     Admin_list = [
+#         {
+#             "id": Admin.id,
+#             "Adminname": Admin.Adminname,
+#             "role": Admin.role
+#         }
+#         for Admin in Admins
+#     ]
+#     return jsonify(Admin_list), 200
 
 #--------------------- Service endpoints
 @routes.route('/services', methods=['POST'])
@@ -252,21 +323,47 @@ def create_service():
     db.session.commit()
     return jsonify({"message": "Service created successfully", "service_id": new_service.id}), 201
 
-# List all services
 @routes.route('/services', methods=['GET'])
 def list_services():
     services = db.session.query(Service).all()
-    service_list = [
-        {
-            "id": service.id,
-            "name": service.name,
-            "price": service.price,
-            "category": service.category,
-            "description": service.description
-        }
-        for service in services
-    ]
-    return jsonify(service_list), 200
+    return render_template('user/service_list.html', services=services)
+
+
+@routes.route('/book/<int:service_id>', methods=['GET', 'POST'])
+def booking(service_id):
+    service = Service.query.get_or_404(service_id)
+
+    if request.method == 'POST':
+        # Ensure user is logged in
+        user_id = session.get('user_id')
+        if not user_id:
+            flash("Please login to book a service.", "warning")
+            return redirect(url_for('routes.login'))
+
+        date_str = request.form.get('date')
+        time_str = request.form.get('time')
+        recurring = 'recurring' in request.form
+
+        try:
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            time = datetime.strptime(time_str, '%H:%M').time()
+        except ValueError:
+            flash("Invalid date or time format.", "danger")
+            return redirect(request.url)
+
+        new_booking = Booking(
+            user_id=user_id,
+            service_id=service_id,
+            date=date,
+            time=time,
+            recurrence='weekly' if recurring else None
+        )
+        db.session.add(new_booking)
+        db.session.commit()
+        flash("Your booking has been confirmed!", "success")
+        return redirect(url_for('routes.service_detail', service_id=service.id))
+
+    return render_template('booking.html', service=service)
 
 # Get a single service by ID
 @routes.route('/services/<int:service_id>', methods=['GET'])
@@ -478,35 +575,35 @@ def delete_review(review_id):
 @routes.route('/admin/dashboard', methods=['GET'])
  # Only Admins and Super Admins 
 def admin_dashboard():
-    return render_template('admin_dashboard.html', logout_url=url_for('admin_logout'))
+    return render_template('admin/admin_dashboard.html', logout_url=url_for('routes.admin_logout'))
 
 
 # Task 1: Show HTML Admin Login Page (GET request)
-@routes.route('/admin/login', methods=['GET'])
-def admin_login_page():
-    return render_template('admin/admin_login.html')
+# @routes.route('/admin/login', methods=['GET'])
+# def admin_login_page():
+#     return render_template('admin/admin_login.html')
 
-# Task 2: Handle Admin Login (POST request)
-@routes.route('/admin/login', methods=['POST'])
-def admin_login():
-    Adminname = request.form.get('Adminname')
-    password = request.form.get('password')
+# # Task 2: Handle Admin Login (POST request)
+# @routes.route('/admin/login', methods=['POST'])
+# def admin_login():
+#     Adminname = request.form.get('Adminname')
+#     password = request.form.get('password')
 
-    Admin = Admin.query.filter(Admin.Adminname == Adminname, Admin.role.in_(['Admin', 'Super Admin'])).first()
+#     Admin = Admin.query.filter(Admin.Adminname == Adminname, Admin.role.in_(['Admin', 'Super Admin'])).first()
     
-    if not Admin or not verify_password(password, Admin.password_hash):
-        logger.warning(f"Failed admin login attempt for Adminname: {Adminname}")
-        flash('Invalid credentials', 'danger')
-        return redirect(url_for('admin_login_page'))
+#     if not Admin or not verify_password(password, Admin.password_hash):
+#         logger.warning(f"Failed admin login attempt for Adminname: {Adminname}")
+#         flash('Invalid credentials', 'danger')
+#         return redirect(url_for('admin_login_page'))
     
-    logger.info(f"Successful admin login for Adminname: {Adminname}")
-    token = create_jwt_token(Admin)
-    response = make_response(redirect(url_for('admin_dashboard')))
-    response.set_cookie('admin_token', token, httponly=True, secure=True, samesite='Strict')
-    session['Admin_role'] = Admin.role
-    session['Admin_id'] = Admin.id
-    flash('Welcome to Admin Panel!', 'success')
-    return response
+#     logger.info(f"Successful admin login for Adminname: {Adminname}")
+#     token = create_jwt_token(Admin)
+#     response = make_response(redirect(url_for('admin_dashboard')))
+#     response.set_cookie('admin_token', token, httponly=True, secure=True, samesite='Strict')
+#     session['Admin_role'] = Admin.role
+#     session['Admin_id'] = Admin.id
+#     flash('Welcome to Admin Panel!', 'success')
+#     return response
 
 
 # --------admin logout    
@@ -523,20 +620,20 @@ def admin_logout():
     return jsonify({'message': 'Method Not Allowed'}), 405
 
 # ✅ Add Routes for Admin Panel Buttons
-@routes.route('/admin/Admins', methods=['GET'])
-def admin_manage_Admins():
-    Admins = Admin.query.all()
-    return render_template('admin_Admins.html', Admins=Admins)
+# @routes.route('/admin/Admins', methods=['GET'])
+# def admin_manage_Admins():
+#     Admins = Admin.query.all()
+#     return render_template('admin_Admins.html', Admins=Admins)
 
-@routes.route('/admin/services', methods=['GET'])
-def admin_manage_services():
-    services = Service.query.all()
-    return render_template('admin_services.html', services=services)
+# @routes.route('/admin/services', methods=['GET'])
+# def admin_manage_services():
+#     services = Service.query.all()
+#     return render_template('admin_services.html', services=services)
 
-@routes.route('/admin/reviews', methods=['GET'])
-def admin_manage_reviews():
-    reviews = Review.query.all()
-    return render_template('admin_reviews.html', reviews=reviews)
+# @routes.route('/admin/reviews', methods=['GET'])
+# def admin_manage_reviews():
+#     reviews = Review.query.all()
+#     return render_template('admin_reviews.html', reviews=reviews)
 
 
 #----------Broadcast Notification
@@ -547,6 +644,10 @@ def broadcast_notification():
     broadcast_to_topic(title, body)
     flash('Announcement sent to all Admins!', 'success')
     return redirect(url_for('admin_dashboard'))
+
+#--------------------- Provider endpoints
+    return render_template('provider/login.html')
+
 
 @routes.errorhandler(Exception)
 def handle_api_error(error):
